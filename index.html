@@ -32,7 +32,7 @@
   <section id="menuPrincipal" class="menu">
     <button class="menuBtn" onclick="abrirModulo('entrada')"><strong>CHECKLIST ENTRADA</strong><span>Em breve</span></button>
     <button class="menuBtn" onclick="abrirModulo('fechamento')"><strong>CHECKLIST FECHAMENTO</strong><span>Em breve</span></button>
-    <button class="menuBtn on" onclick="abrirModulo('itens-diarios')"><strong>CHECKLIST ITENS DIÁRIOS</strong><span>Conferência de itens para o dia seguinte</span></button>
+    <button class="menuBtn" onclick="abrirModulo('itens-diarios')"><strong>CHECKLIST ITENS DIÁRIOS</strong><span>Conferência de itens para o dia seguinte</span></button>
     <button class="menuBtn" onclick="abrirModulo('itens-sexta')"><strong>CHECKLIST ITENS SEXTA-FEIRA</strong><span>Em breve</span></button>
     <button class="menuBtn" onclick="abrirModulo('bebidas')"><strong>CHECKLIST BEBIDAS</strong><span>Contagem de fardos e unidades</span></button>
     <button class="menuBtn" onclick="abrirModulo('estoque')"><strong>CONTAGEM DE ESTOQUE</strong><span>Em breve</span></button>
@@ -132,8 +132,9 @@ function renderBebidas(){
   atualizarResumoBebidas();
 }
 function atualizarBebida(id,campo,valor){const b=bebidas.find(x=>x.id===id); if(!b)return; b[campo]=valor; salvarLocal(); atualizarResumoBebidas()}
-function bebidasIncompletas(){return bebidas.filter(b=>b.fardos===''||b.fardos==null||b.unidades===''||b.unidades==null)}
-function atualizarResumoBebidas(){const p=bebidas.filter(b=>b.fardos!==''&&b.fardos!=null&&b.unidades!==''&&b.unidades!=null).length; summary.textContent=`${p}/${bebidas.length} bebidas preenchidas`; if(typeof btnEnviar!=='undefined')btnEnviar.disabled=p!==bebidas.length}
+function bebidaPreenchida(b){return (b.fardos!==''&&b.fardos!=null)||(b.unidades!==''&&b.unidades!=null)}
+function bebidasIncompletas(){return bebidas.filter(b=>!bebidaPreenchida(b))}
+function atualizarResumoBebidas(){const p=bebidas.filter(bebidaPreenchida).length; summary.textContent=`${p}/${bebidas.length} bebidas preenchidas`; if(typeof btnEnviar!=='undefined')btnEnviar.disabled=p!==bebidas.length}
 function render(){
   const ordem=['Geladeira','Freezer','Dispensa'];
   const grupos=ordem.map(cat=>[cat,itens.filter(i=>i.categoria===cat)]).filter(([,arr])=>arr.length);
@@ -180,7 +181,7 @@ function atualizarResumo(){const p=itens.filter(i=>i.nao_precisa||(i.quantidade_
 function atualizarExtraCount(){if(extraCount&&itemExtra)extraCount.textContent=`${itemExtra.value.length}/100 caracteres`}
 async function enviarChecklistBebidas(){
   const funcionario=pedirFuncionarioObrigatorio();
-  const faltando=bebidasIncompletas(); if(faltando.length){alert(`Preencha fardos e unidades de todas as bebidas. Faltam ${faltando.length}.`); setStatus(`Checklist incompleto. Faltam ${faltando.length} bebidas.`); return}
+  const faltando=bebidasIncompletas(); if(faltando.length){alert(`Preencha fardos ou unidades de todas as bebidas. Se não tiver, digite 0. Faltam ${faltando.length}.`); setStatus(`Checklist incompleto. Faltam ${faltando.length} bebidas.`); return}
   const data_checklist=hojeISO(), data_alvo=data_checklist;
   const rows=bebidas.map(b=>({data_checklist,data_alvo,categoria:'BEBIDAS',produto:b.produto,minimo_dia:0,quantidade_atual:num(b.fardos)*b.porFardo+num(b.unidades),precisa_trazer:0,observacao:`Funcionário: ${funcionario} | Fardos: ${b.fardos} | Unidades: ${b.unidades} | fd c/ ${b.porFardo}`,origem:'checklist_bebidas',resolvido:true}));
   try{
