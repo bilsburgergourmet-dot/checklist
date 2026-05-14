@@ -19,15 +19,15 @@
     .foot{position:sticky;bottom:0;background:rgba(15,13,11,.96);border-top:1px solid var(--line);padding:12px 14px;display:grid;gap:8px;max-width:820px;margin:0 auto}
     .summary{color:var(--mut);font-size:14px}.admin{margin:12px 0;padding:12px;border:1px solid var(--line);border-radius:16px;background:var(--card)}
     .menu{display:grid;gap:10px;margin:14px auto;max-width:820px}.menuBtn{padding:18px;text-align:left;border-radius:16px;background:var(--card);border:1px solid var(--line);color:var(--txt);font-size:16px}.menuBtn strong{display:block;font-size:17px}.menuBtn span{display:block;margin-top:4px;color:var(--mut);font-size:13px}.menuBtn.on{border-color:var(--acc);box-shadow:0 0 0 1px rgba(245,166,35,.25)}.hidden{display:none!important}.topActions{display:flex;gap:8px;align-items:center;margin-bottom:10px}.back{width:auto;padding:9px 12px}
-    @media(max-width:560px){.grid{grid-template-columns:1fr} input,select,textarea,button{font-size:15px}}
+    .catTitle{margin:18px 0 8px;color:var(--acc);font-weight:900}.listHead,.itemRow{display:grid;grid-template-columns:1.5fr .75fr .75fr .75fr 92px;gap:8px;align-items:center}.listHead{color:var(--mut);font-size:12px;padding:0 8px 6px}.itemRow{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:8px;margin-bottom:8px}.itemName{background:none;border:none;color:var(--txt);padding:0;text-align:left;font-weight:900}.ref{grid-column:1/-1;background:#13100d;color:var(--mut);border-radius:10px;padding:8px;font-size:13px}.miniInput{padding:9px}.bring{font-weight:900}.noBtn{padding:9px;font-size:13px;background:var(--card2);color:var(--txt);border:1px solid var(--line)}.noBtn.marked{background:var(--ok);color:#062114}.unit{color:var(--mut);font-size:12px}
+    @media(max-width:680px){.grid{grid-template-columns:1fr} input,select,textarea,button{font-size:15px}.listHead{display:none}.itemRow{grid-template-columns:1fr 1fr;gap:8px}.itemName{grid-column:1/-1}.bring{font-size:15px}.noBtn{grid-column:2}.ref{grid-column:1/-1}}
   </style>
 </head>
 <body>
 <header>
   <div class="brand"><img src="assets/bils-logo.jpg" alt="Bils Burger"><h1>Checklist Bils Burger</h1></div>
-  <div class="grid">
-    <div><label>Funcionário</label><input id="funcionario" placeholder="Seu nome"></div>
-    <div><label>Data do checklist</label><input id="dataChecklist" type="date"></div>
+  <div>
+    <label>Funcionário</label><input id="funcionario" placeholder="Seu nome">
   </div>
   <div class="status" id="status">Escolha uma opção.</div>
 </header>
@@ -43,11 +43,6 @@
 
   <section id="appChecklist" class="hidden">
     <div class="topActions"><button class="secondary back" onclick="voltarMenu()">← Menu</button><b>CHECKLIST ITENS DIÁRIOS</b></div>
-    <div class="tabs">
-      <div class="tab active" data-cat="Dispensa">Dispensa</div>
-      <div class="tab" data-cat="Geladeira">Geladeira</div>
-      <div class="tab" data-cat="Freezer">Freezer</div>
-    </div>
     <section id="lista"></section>
     <details class="admin">
     <summary><b>+ Adicionar/editar item</b></summary><br>
@@ -85,16 +80,16 @@ function fmtBR(iso){if(!iso)return '';const [y,m,d]=iso.split('-');return `${d}/
 function num(v){const n=Number(String(v??'').replace(',','.'));return Number.isFinite(n)?n:0}
 function fmtNum(v){const n=Number(v||0);return Number.isInteger(n)?String(n):String(n).replace('.',',')}
 function setStatus(m){document.getElementById('status').textContent=m}
-function localKey(){return 'bils_checklist_'+document.getElementById('dataChecklist').value}
+function localKey(){return 'bils_checklist_'+hojeISO()}
 function supaHeaders(extra={}){return {'apikey':SUPABASE_ANON_KEY,'Authorization':'Bearer '+SUPABASE_ANON_KEY,'Content-Type':'application/json',...extra}}
 async function supa(path,opt={}){const r=await fetch(`${SUPABASE_URL}/rest/v1/${path}`,{...opt,headers:supaHeaders(opt.headers||{})});const txt=await r.text();if(!r.ok)throw new Error(txt||r.statusText);return txt?JSON.parse(txt):null}
 function perfilMinimo(dataAlvo){const [y,m,d]=dataAlvo.split('-').map(Number);const wd=new Date(Date.UTC(y,m-1,d)).getUTCDay();if(wd===5)return 'sexta';if(wd===0||wd===6)return 'sab_dom';return 'seg_qui'}
-function salvarLocal(){localStorage.setItem(localKey(),JSON.stringify({funcionario:funcionario.value,itens:itens.map(i=>({id:i.id,quantidade_atual:i.quantidade_atual??'',observacao:i.observacao??''}))}))}
+function salvarLocal(){localStorage.setItem(localKey(),JSON.stringify({funcionario:funcionario.value,itens:itens.map(i=>({id:i.id,quantidade_atual:i.quantidade_atual??'',observacao:i.observacao??'',nao_precisa:!!i.nao_precisa}))}))}
 function carregarLocal(){try{const raw=localStorage.getItem(localKey()); if(!raw)return; const data=JSON.parse(raw); if(data.funcionario&&!funcionario.value) funcionario.value=data.funcionario; const map=new Map((data.itens||[]).map(i=>[i.id,i])); itens=itens.map(i=>map.has(i.id)?{...i,...map.get(i.id)}:i)}catch(e){}}
 
 async function carregarItens(){
   try{
-    const d=dataChecklist.value||hojeISO(); dataChecklist.value=d; const dataAlvo=addDaysISO(d,1); const campo=perfilMinimo(dataAlvo);
+    const d=hojeISO(); const dataAlvo=addDaysISO(d,1); const campo=perfilMinimo(dataAlvo);
     setStatus('Carregando itens do Supabase...');
     const rows=await supa('checklist_modelo_itens?select=*&ativo=eq.true&order=categoria.asc,ordem.asc,produto.asc');
     itens=(rows||[]).map(i=>({...i,minimo_dia:num(i[campo]),quantidade_atual:'',observacao:''}));
@@ -102,24 +97,34 @@ async function carregarItens(){
     setStatus(`Checklist feito em ${fmtBR(d)}\nVálido para ${fmtBR(dataAlvo)}\nFonte: Supabase`);
   }catch(e){setStatus('Erro ao carregar itens:\n'+e.message)}
 }
+function esc(v){return String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
 function render(){
-  const arr=itens.filter(i=>i.categoria===categoriaAtual);
-  lista.innerHTML=arr.length?arr.map(i=>{
-    const atual=i.quantidade_atual===''?'':num(i.quantidade_atual), precisa=i.quantidade_atual===''?null:Math.max(0,num(i.minimo_dia)-atual), un=i.unidade?' '+i.unidade:'';
-    return `<div class="card"><div class="head"><div><div class="prod">${i.produto}</div><div style="color:var(--mut);font-size:13px">${i.categoria}</div></div><div class="min">mínimo<br><b>${fmtNum(i.minimo_dia)}${un}</b></div></div>
-    <label>Quantidade atual</label><input type="number" step="0.01" inputmode="decimal" value="${i.quantidade_atual??''}" placeholder="Digite quanto tem" oninput="atualizarQtd('${i.id}',this.value)">
-    <div class="need ${precisa&&precisa>0?'warn':'ok'}">${precisa===null?'Preencha a quantidade atual':precisa>0?`Precisa trazer: ${fmtNum(precisa)}${un}`:'OK, não precisa trazer'}</div>
-    <textarea placeholder="Observação opcional" oninput="atualizarObs('${i.id}',this.value)">${i.observacao||''}</textarea></div>`
-  }).join(''):`<div class="card">Nenhum item em ${categoriaAtual}.</div>`;
+  const ordem=['Geladeira','Freezer','Dispensa'];
+  const grupos=ordem.map(cat=>[cat,itens.filter(i=>i.categoria===cat)]).filter(([,arr])=>arr.length);
+  lista.innerHTML=grupos.length?grupos.map(([cat,arr])=>`<div class="catTitle">${cat}</div><div class="listHead"><div>Item</div><div>Precisa</div><div>Tem</div><div>Trazer</div><div></div></div>`+arr.map(i=>{
+    const atual=i.quantidade_atual===''?'':num(i.quantidade_atual);
+    const precisa=i.nao_precisa?0:(i.quantidade_atual===''?null:Math.max(0,num(i.minimo_dia)-atual));
+    const un=i.unidade?' '+i.unidade:'';
+    return `<div class="itemRow">
+      <button class="itemName" onclick="toggleRef('${i.id}')">${esc(i.produto)}<div class="unit">toque para ver referência</div></button>
+      <div><span class="unit">Precisa</span><br><b>${fmtNum(i.minimo_dia)}${esc(un)}</b></div>
+      <div><span class="unit">Tem</span><input class="miniInput" type="number" step="0.01" inputmode="decimal" value="${i.quantidade_atual??''}" placeholder="0" oninput="atualizarQtd('${i.id}',this.value)"></div>
+      <div class="bring ${precisa&&precisa>0?'warn':'ok'}"><span class="unit">Trazer</span><br>${precisa===null?'-':fmtNum(precisa)+esc(un)}</div>
+      <button class="noBtn ${i.nao_precisa?'marked':''}" onclick="marcarNaoPrecisa('${i.id}')">${i.nao_precisa?'Marcado':'Não precisa'}</button>
+      ${i.showRef?`<div class="ref"><b>Referência:</b> ${esc(i.unidade||'Sem referência cadastrada')}</div>`:''}
+    </div>`
+  }).join('')).join(''):`<div class="card">Nenhum item cadastrado.</div>`;
   atualizarResumo();
 }
-function atualizarQtd(id,v){itens=itens.map(i=>i.id===id?{...i,quantidade_atual:v}:i);salvarLocal();render()}
+function toggleRef(id){itens=itens.map(i=>i.id===id?{...i,showRef:!i.showRef}:i);render()}
+function marcarNaoPrecisa(id){itens=itens.map(i=>i.id===id?{...i,nao_precisa:!i.nao_precisa,quantidade_atual:!i.nao_precisa?'':i.quantidade_atual}:i);salvarLocal();render()}
+function atualizarQtd(id,v){itens=itens.map(i=>i.id===id?{...i,quantidade_atual:v,nao_precisa:false}:i);salvarLocal();render()}
 function atualizarObs(id,v){itens=itens.map(i=>i.id===id?{...i,observacao:v}:i);salvarLocal()}
-function atualizarResumo(){const p=itens.filter(i=>i.quantidade_atual!==''&&i.quantidade_atual!=null).length;const f=itens.filter(i=>i.quantidade_atual!==''&&Math.max(0,num(i.minimo_dia)-num(i.quantidade_atual))>0).length;summary.textContent=`${p}/${itens.length} itens preenchidos | ${f} para levar`}
+function atualizarResumo(){const p=itens.filter(i=>i.nao_precisa||(i.quantidade_atual!==''&&i.quantidade_atual!=null)).length;const f=itens.filter(i=>!i.nao_precisa&&i.quantidade_atual!==''&&Math.max(0,num(i.minimo_dia)-num(i.quantidade_atual))>0).length;summary.textContent=`${p}/${itens.length} itens preenchidos | ${f} para levar`}
 async function enviarChecklist(){
   const funcionario=document.getElementById('funcionario').value.trim(); if(!funcionario){alert('Preencha o nome do funcionário.');return}
-  const data_checklist=dataChecklist.value||hojeISO(), data_alvo=addDaysISO(data_checklist,1);
-  const rows=itens.map(i=>{const atual=i.quantidade_atual===''?0:num(i.quantidade_atual);const precisa=Math.max(0,num(i.minimo_dia)-atual);return {data_checklist,data_alvo,categoria:i.categoria,produto:i.produto,minimo_dia:num(i.minimo_dia),quantidade_atual:atual,precisa_trazer:precisa,observacao:[funcionario?`Funcionário: ${funcionario}`:'',i.observacao||''].filter(Boolean).join(' | ')||null,origem:'checklist_webapp',resolvido:precisa<=0}});
+  const data_checklist=hojeISO(), data_alvo=addDaysISO(data_checklist,1);
+  const rows=itens.map(i=>{const atual=i.nao_precisa?num(i.minimo_dia):(i.quantidade_atual===''?0:num(i.quantidade_atual));const precisa=i.nao_precisa?0:Math.max(0,num(i.minimo_dia)-atual);return {data_checklist,data_alvo,categoria:i.categoria,produto:i.produto,minimo_dia:num(i.minimo_dia),quantidade_atual:atual,precisa_trazer:precisa,observacao:[funcionario?`Funcionário: ${funcionario}`:'',i.nao_precisa?'Não precisa marcado':'',i.observacao||''].filter(Boolean).join(' | ')||null,origem:'checklist_webapp',resolvido:precisa<=0}});
   try{
     setStatus('Enviando checklist para o Supabase...');
     await supa('checklist_levar',{method:'POST',headers:{Prefer:'return=minimal'},body:JSON.stringify(rows)});
@@ -136,8 +141,7 @@ async function salvarItemModelo(){
     admProduto.value='';admUnidade.value='';await carregarItens();alert('Item salvo.');
   }catch(e){alert('Erro ao salvar item:\n'+e.message)}
 }
-document.querySelectorAll('.tab').forEach(tab=>tab.onclick=()=>{document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));tab.classList.add('active');categoriaAtual=tab.dataset.cat;render()});
-dataChecklist.value=hojeISO(); dataChecklist.onchange=()=>{if(moduloAtual==='itens-diarios')carregarItens()}; funcionario.oninput=salvarLocal;
+funcionario.oninput=salvarLocal;
 </script>
 </body>
 </html>
