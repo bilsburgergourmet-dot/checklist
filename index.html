@@ -29,7 +29,7 @@
   <div>
     <label>Funcionário</label><input id="funcionario" placeholder="Seu nome">
   </div>
-  <div class="status" id="status">Escolha uma opção.</div>
+  <div class="status hidden" id="status"></div>
 </header>
 <main>
   <section id="menuPrincipal" class="menu">
@@ -71,7 +71,7 @@ function abrirModulo(modulo){
   }
   menuPrincipal.classList.add('hidden'); appChecklist.classList.remove('hidden'); footerChecklist.classList.remove('hidden'); carregarItens(editandoEnviado);
 }
-function voltarMenu(){moduloAtual=null; appChecklist.classList.add('hidden'); footerChecklist.classList.add('hidden'); menuPrincipal.classList.remove('hidden'); setStatus('Escolha uma opção.')}
+function voltarMenu(){moduloAtual=null; appChecklist.classList.add('hidden'); footerChecklist.classList.add('hidden'); menuPrincipal.classList.remove('hidden'); setStatus('')}
 
 function hojeISO(){return fortalezaISO()}
 function fortalezaISO(){const parts=new Intl.DateTimeFormat('en-CA',{timeZone:'America/Fortaleza',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date());const m=Object.fromEntries(parts.map(p=>[p.type,p.value]));return `${m.year}-${m.month}-${m.day}`}
@@ -79,7 +79,7 @@ function addDaysISO(iso,days){const [y,m,d]=iso.split('-').map(Number);const dt=
 function fmtBR(iso){if(!iso)return '';const [y,m,d]=iso.split('-');return `${d}/${m}/${y}`}
 function num(v){const n=Number(String(v??'').replace(',','.'));return Number.isFinite(n)?n:0}
 function fmtNum(v){const n=Number(v||0);return Number.isInteger(n)?String(n):String(n).replace('.',',')}
-function setStatus(m){document.getElementById('status').textContent=m}
+function setStatus(m){const el=document.getElementById('status'); el.textContent=m||''; el.classList.toggle('hidden', !m)}
 function pedirFuncionarioObrigatorio(){
   let nome=(funcionario.value||'').trim();
   while(!nome){
