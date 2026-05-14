@@ -44,18 +44,11 @@
   <section id="appChecklist" class="hidden">
     <div class="topActions"><button class="secondary back" onclick="voltarMenu()">← Menu</button><b>CHECKLIST ITENS DIÁRIOS</b></div>
     <section id="lista"></section>
-    <details class="admin">
-    <summary><b>+ Adicionar/editar item</b></summary><br>
-    <div class="grid">
-      <div><label>Categoria</label><select id="admCategoria"><option>Dispensa</option><option>Geladeira</option><option>Freezer</option></select></div>
-      <div><label>Produto</label><input id="admProduto" placeholder="Ex.: Shoyu"></div>
-      <div><label>Unidade</label><input id="admUnidade" placeholder="un, kg, cx"></div>
-      <div><label>Seg-Qui</label><input id="admSegQui" type="number" step="0.01" value="0"></div>
-      <div><label>Sexta</label><input id="admSexta" type="number" step="0.01" value="0"></div>
-      <div><label>Sáb-Dom</label><input id="admSabDom" type="number" step="0.01" value="0"></div>
-    </div><br>
-    <button class="secondary" onclick="salvarItemModelo()">Salvar item</button>
-    </details>
+    <div class="admin">
+      <label>Algum item a mais?</label>
+      <input id="itemExtra" maxlength="100" placeholder="Digite aqui se precisar de algo fora da lista" oninput="salvarLocal(); atualizarExtraCount()">
+      <div class="unit" id="extraCount">0/100 caracteres</div>
+    </div>
   </section>
 </main>
 <div class="foot hidden" id="footerChecklist">
@@ -92,9 +85,9 @@ function submittedKey(){return 'bils_checklist_submitted_'+hojeISO()}
 function supaHeaders(extra={}){return {'apikey':SUPABASE_ANON_KEY,'Authorization':'Bearer '+SUPABASE_ANON_KEY,'Content-Type':'application/json',...extra}}
 async function supa(path,opt={}){const r=await fetch(`${SUPABASE_URL}/rest/v1/${path}`,{...opt,headers:supaHeaders(opt.headers||{})});const txt=await r.text();if(!r.ok)throw new Error(txt||r.statusText);return txt?JSON.parse(txt):null}
 function perfilMinimo(dataAlvo){const [y,m,d]=dataAlvo.split('-').map(Number);const wd=new Date(Date.UTC(y,m-1,d)).getUTCDay();if(wd===5)return 'sexta';if(wd===0||wd===6)return 'sab_dom';return 'seg_qui'}
-function salvarLocal(){localStorage.setItem(localKey(),JSON.stringify({funcionario:funcionario.value,itens:itens.map(i=>({id:i.id,quantidade_atual:i.quantidade_atual??'',observacao:i.observacao??'',nao_precisa:!!i.nao_precisa}))}))}
-function estadoAtual(){return {funcionario:funcionario.value,itens:itens.map(i=>({id:i.id,quantidade_atual:i.quantidade_atual??'',observacao:i.observacao??'',nao_precisa:!!i.nao_precisa}))}}
-function carregarLocal(usarEnviado=false){try{const raw=localStorage.getItem(usarEnviado?submittedKey():localKey()); if(!raw)return; const data=JSON.parse(raw); if(data.funcionario) funcionario.value=data.funcionario; const map=new Map((data.itens||[]).map(i=>[i.id,i])); itens=itens.map(i=>map.has(i.id)?{...i,...map.get(i.id)}:i)}catch(e){}}
+function salvarLocal(){localStorage.setItem(localKey(),JSON.stringify({funcionario:funcionario.value,item_extra:itemExtra?.value||'',itens:itens.map(i=>({id:i.id,quantidade_atual:i.quantidade_atual??'',observacao:i.observacao??'',nao_precisa:!!i.nao_precisa}))}))}
+function estadoAtual(){return {funcionario:funcionario.value,item_extra:itemExtra?.value||'',itens:itens.map(i=>({id:i.id,quantidade_atual:i.quantidade_atual??'',observacao:i.observacao??'',nao_precisa:!!i.nao_precisa}))}}
+function carregarLocal(usarEnviado=false){try{const raw=localStorage.getItem(usarEnviado?submittedKey():localKey()); if(!raw)return; const data=JSON.parse(raw); if(data.funcionario) funcionario.value=data.funcionario; if(itemExtra) itemExtra.value=(data.item_extra||'').slice(0,100); atualizarExtraCount(); const map=new Map((data.itens||[]).map(i=>[i.id,i])); itens=itens.map(i=>map.has(i.id)?{...i,...map.get(i.id)}:i)}catch(e){}}
 
 async function carregarItens(usarEnviado=false){
   try{
@@ -150,11 +143,14 @@ function atualizarLinha(id){
 }
 function itensIncompletos(){return itens.filter(i=>!i.nao_precisa&&(i.quantidade_atual===''||i.quantidade_atual==null))}
 function atualizarResumo(){const p=itens.filter(i=>i.nao_precisa||(i.quantidade_atual!==''&&i.quantidade_atual!=null)).length;const f=itens.filter(i=>!i.nao_precisa&&i.quantidade_atual!==''&&Math.max(0,num(i.minimo_dia)-num(i.quantidade_atual))>0).length;summary.textContent=`${p}/${itens.length} itens preenchidos | ${f} para levar`; if(typeof btnEnviar!=='undefined')btnEnviar.disabled=p!==itens.length}
+function atualizarExtraCount(){if(extraCount&&itemExtra)extraCount.textContent=`${itemExtra.value.length}/100 caracteres`}
 async function enviarChecklist(){
   const funcionario=document.getElementById('funcionario').value.trim(); if(!funcionario){alert('Preencha o nome do funcionário.');return}
   const faltando=itensIncompletos(); if(faltando.length){alert(`Preencha todos os itens ou marque Não precisa. Faltam ${faltando.length}.`); setStatus(`Checklist incompleto. Faltam ${faltando.length} itens.`); return}
   const data_checklist=hojeISO(), data_alvo=addDaysISO(data_checklist,1);
   const rows=itens.map(i=>{const atual=i.nao_precisa?num(i.minimo_dia):(i.quantidade_atual===''?0:num(i.quantidade_atual));const precisa=i.nao_precisa?0:Math.max(0,num(i.minimo_dia)-atual);return {data_checklist,data_alvo,categoria:i.categoria,produto:i.produto,minimo_dia:num(i.minimo_dia),quantidade_atual:atual,precisa_trazer:precisa,observacao:[funcionario?`Funcionário: ${funcionario}`:'',i.nao_precisa?'Não precisa marcado':'',i.observacao||''].filter(Boolean).join(' | ')||null,origem:'checklist_webapp',resolvido:precisa<=0}});
+  const extra=(itemExtra?.value||'').trim().slice(0,100);
+  if(extra) rows.push({data_checklist,data_alvo,categoria:'EXTRA',produto:'ITEM A MAIS',minimo_dia:0,quantidade_atual:0,precisa_trazer:0,observacao:`Funcionário: ${funcionario} | Item a mais: ${extra}`,origem:'checklist_webapp',resolvido:false});
   try{
     setStatus('Enviando checklist para o Supabase...');
     await supa(`checklist_levar?data_checklist=eq.${data_checklist}&origem=eq.checklist_webapp`,{method:'DELETE',headers:{Prefer:'return=minimal'}});
@@ -164,15 +160,7 @@ async function enviarChecklist(){
     localStorage.setItem(submittedKey(), JSON.stringify(estadoAtual())); localStorage.removeItem(localKey());
   }catch(e){setStatus('Erro ao enviar checklist:\n'+e.message)}
 }
-async function salvarItemModelo(){
-  const payload={categoria:admCategoria.value,produto:admProduto.value.trim(),unidade:admUnidade.value.trim()||null,seg_qui:num(admSegQui.value),sexta:num(admSexta.value),sab_dom:num(admSabDom.value),ativo:true};
-  if(!payload.produto){alert('Digite o produto.');return}
-  try{
-    await supa('checklist_modelo_itens?on_conflict=categoria,produto',{method:'POST',headers:{Prefer:'resolution=merge-duplicates,return=minimal'},body:JSON.stringify(payload)});
-    admProduto.value='';admUnidade.value='';await carregarItens();alert('Item salvo.');
-  }catch(e){alert('Erro ao salvar item:\n'+e.message)}
-}
-funcionario.oninput=salvarLocal;
+funcionario.oninput=salvarLocal; atualizarExtraCount();
 </script>
 </body>
 </html>
