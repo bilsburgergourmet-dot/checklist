@@ -121,7 +121,7 @@ function esc(v){return String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&l
 function carregarBebidas(usarEnviado=false){
   bebidas=BEBIDAS_MODELO.map(b=>({...b,fardos:'',unidades:''}));
   carregarLocal(usarEnviado); renderBebidas();
-  setStatus(`Checklist de bebidas feito na ${diaSemanaBR(hojeISO())}`);
+  setStatus(`Checklist de bebidas feito na ${diaSemanaBR(hojeISO())}\nPreencha fardos ou unidades. Campo vazio será 0.`);
 }
 function renderBebidas(){
   lista.innerHTML=`<div class="catTitle">Bebidas</div>`+bebidas.map(b=>`<div class="bebidaRow">
@@ -183,7 +183,7 @@ async function enviarChecklistBebidas(){
   const funcionario=pedirFuncionarioObrigatorio();
   const faltando=bebidasIncompletas(); if(faltando.length){alert(`Preencha fardos ou unidades de todas as bebidas. Se não tiver, digite 0. Faltam ${faltando.length}.`); setStatus(`Checklist incompleto. Faltam ${faltando.length} bebidas.`); return}
   const data_checklist=hojeISO(), data_alvo=data_checklist;
-  const rows=bebidas.map(b=>({data_checklist,data_alvo,categoria:'BEBIDAS',produto:b.produto,minimo_dia:0,quantidade_atual:num(b.fardos)*b.porFardo+num(b.unidades),precisa_trazer:0,observacao:`Funcionário: ${funcionario} | Fardos: ${b.fardos} | Unidades: ${b.unidades} | fd c/ ${b.porFardo}`,origem:'checklist_bebidas',resolvido:true}));
+  const rows=bebidas.map(b=>{const f=b.fardos===''||b.fardos==null?'0':b.fardos; const u=b.unidades===''||b.unidades==null?'0':b.unidades; return {data_checklist,data_alvo,categoria:'BEBIDAS',produto:b.produto,minimo_dia:0,quantidade_atual:num(f)*b.porFardo+num(u),precisa_trazer:0,observacao:`Funcionário: ${funcionario} | Fardos: ${f} | Unidades: ${u} | fd c/ ${b.porFardo}`,origem:'checklist_bebidas',resolvido:true}});
   try{
     setStatus('Enviando checklist de bebidas...');
     await supa(`checklist_levar?data_checklist=eq.${data_checklist}&origem=eq.checklist_bebidas`,{method:'DELETE',headers:{Prefer:'return=minimal'}});
