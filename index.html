@@ -127,6 +127,7 @@ function entradaAtiva(item){const perfil=diaPerfilHoje(); if(item.regra==='seg_q
 function entradaObs(item){
   const p=diaPerfilHoje();
   if(item.id==='coz_4')return 'Maionese verde: meia bisnaga\nMaionese da casa: 1 bisnaga cheia\nMolho rosé: meia bisnaga';
+  if(item.id==='coz_5')return p==='sab_dom'?'Batata G: 15 unidades\nBatata P: 10 unidades':'Batata G: 10 unidades\nBatata P: 5 unidades';
   if(item.id==='at_9')return p==='sexta'?'12 unidades':p==='sab_dom'?'15 unidades':'10 unidades';
   if(item.id==='at_10'){
     if(p==='sexta')return 'Maionese verde: 15 potinhos\nMaionese da casa: 15 potinhos\nMolho rosé: 6 potinhos';
