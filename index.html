@@ -105,7 +105,7 @@ async function carregarItens(usarEnviado=false){
     const rows=await supa('checklist_modelo_itens?select=*&ativo=eq.true&order=categoria.asc,ordem.asc,produto.asc');
     itens=(rows||[]).map(i=>({...i,minimo_dia:num(i[campo]),quantidade_atual:'',observacao:''}));
     carregarLocal(usarEnviado); render();
-    setStatus(`Checklist feito em ${fmtBR(d)}\nVálido para ${fmtBR(dataAlvo)}\nFonte: Supabase`);
+    setStatus(`Checklist feito em ${fmtBR(d)}\nVálido para ${fmtBR(dataAlvo)}`);
   }catch(e){setStatus('Erro ao carregar itens:\n'+e.message)}
 }
 function esc(v){return String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
