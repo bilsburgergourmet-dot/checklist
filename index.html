@@ -78,6 +78,7 @@ function hojeISO(){return fortalezaISO()}
 function fortalezaISO(){const parts=new Intl.DateTimeFormat('en-CA',{timeZone:'America/Fortaleza',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date());const m=Object.fromEntries(parts.map(p=>[p.type,p.value]));return `${m.year}-${m.month}-${m.day}`}
 function addDaysISO(iso,days){const [y,m,d]=iso.split('-').map(Number);const dt=new Date(Date.UTC(y,m-1,d));dt.setUTCDate(dt.getUTCDate()+days);return dt.toISOString().slice(0,10)}
 function fmtBR(iso){if(!iso)return '';const [y,m,d]=iso.split('-');return `${d}/${m}/${y}`}
+function diaSemanaBR(iso){const [y,m,d]=iso.split('-').map(Number);const dt=new Date(Date.UTC(y,m-1,d,12,0,0));return new Intl.DateTimeFormat('pt-BR',{weekday:'long',timeZone:'America/Fortaleza'}).format(dt)}
 function num(v){const n=Number(String(v??'').replace(',','.'));return Number.isFinite(n)?n:0}
 function fmtNum(v){const n=Number(v||0);return Number.isInteger(n)?String(n):String(n).replace('.',',')}
 function setStatus(m){const el=document.getElementById('status'); el.textContent=m||''; el.classList.toggle('hidden', !m)}
@@ -105,7 +106,7 @@ async function carregarItens(usarEnviado=false){
     const rows=await supa('checklist_modelo_itens?select=*&ativo=eq.true&order=categoria.asc,ordem.asc,produto.asc');
     itens=(rows||[]).map(i=>({...i,minimo_dia:num(i[campo]),quantidade_atual:'',observacao:''}));
     carregarLocal(usarEnviado); render();
-    setStatus(`Checklist feito em ${fmtBR(d)}\nVálido para ${fmtBR(dataAlvo)}`);
+    setStatus(`Checklist feito na ${diaSemanaBR(d)}\nVálido para ${diaSemanaBR(dataAlvo)}`);
   }catch(e){setStatus('Erro ao carregar itens:\n'+e.message)}
 }
 function esc(v){return String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
