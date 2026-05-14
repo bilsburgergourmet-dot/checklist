@@ -19,7 +19,7 @@
     .foot{background:rgba(15,13,11,.96);border-top:1px solid var(--line);padding:12px 14px;display:grid;gap:8px;max-width:820px;margin:0 auto 18px}
     .summary{color:var(--mut);font-size:14px}.admin{margin:12px 0;padding:12px;border:1px solid var(--line);border-radius:16px;background:var(--card)}
     .menu{display:grid;gap:10px;margin:14px auto;max-width:820px}.menuBtn{padding:18px;text-align:center;border-radius:16px;background:var(--card);border:1px solid var(--line);color:var(--txt);font-size:16px}.menuBtn strong{display:block;font-size:17px}.menuBtn span{display:block;margin-top:4px;color:var(--mut);font-size:13px}.menuBtn.on{border-color:var(--acc);box-shadow:0 0 0 1px rgba(245,166,35,.25)}.hidden{display:none!important}.topActions{display:flex;gap:8px;align-items:center;margin-bottom:10px}.back{width:auto;padding:9px 12px}
-    input[type=number]::-webkit-outer-spin-button,input[type=number]::-webkit-inner-spin-button{appearance:none;-webkit-appearance:none;margin:0}input[type=number]{appearance:textfield;-moz-appearance:textfield}.catTitle{margin:18px 0 8px;color:var(--acc);font-weight:900}.listHead,.itemRow{display:grid;grid-template-columns:1.5fr .75fr .75fr .75fr 92px;gap:8px;align-items:center}.listHead{color:var(--mut);font-size:12px;padding:0 8px 6px}.itemRow{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:8px;margin-bottom:8px}.itemName{background:none;border:none;color:var(--txt);padding:0;text-align:left;font-weight:900}.ref{grid-column:1/-1;background:#13100d;color:var(--mut);border-radius:10px;padding:8px;font-size:13px}.miniInput{padding:9px}.bring{font-weight:900}.noBtn{padding:9px;font-size:13px;background:var(--card2);color:var(--txt);border:1px solid var(--line)}.noBtn.marked{background:var(--ok);color:#062114}.unit{color:var(--mut);font-size:12px}
+    input[type=number]::-webkit-outer-spin-button,input[type=number]::-webkit-inner-spin-button{appearance:none;-webkit-appearance:none;margin:0}input[type=number]{appearance:textfield;-moz-appearance:textfield}.catTitle{margin:18px 0 8px;color:var(--acc);font-weight:900}.listHead,.itemRow{display:grid;grid-template-columns:1.5fr .75fr .75fr .75fr 92px;gap:8px;align-items:center}.listHead{color:var(--mut);font-size:12px;padding:0 8px 6px}.itemRow{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:8px;margin-bottom:8px}.itemName{background:none;border:none;color:var(--txt);padding:0;text-align:left;font-weight:900}.ref{grid-column:1/-1;background:#13100d;color:var(--mut);border-radius:10px;padding:8px;font-size:13px}.miniInput{padding:9px}.bring{font-weight:900}.noBtn{padding:9px;font-size:13px;background:var(--card2);color:var(--txt);border:1px solid var(--line)}.noBtn.marked{background:var(--ok);color:#062114}.unit{color:var(--mut);font-size:12px}.bebidaRow{display:grid;grid-template-columns:1.4fr .7fr .7fr;gap:8px;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:8px;margin-bottom:8px}.bebidaName{font-weight:900}.bebidaRef{color:var(--mut);font-size:12px;margin-top:2px}@media(max-width:680px){.bebidaRow{grid-template-columns:1fr 1fr}.bebidaName{grid-column:1/-1}}
     @media(max-width:680px){.grid{grid-template-columns:1fr} input,select,textarea,button{font-size:15px}.listHead{display:none}.itemRow{grid-template-columns:1fr 1fr;gap:8px}.itemName{grid-column:1/-1}.bring{font-size:15px}.noBtn{grid-column:2}.ref{grid-column:1/-1}}
   </style>
 </head>
@@ -34,18 +34,18 @@
     <button class="menuBtn" onclick="abrirModulo('fechamento')"><strong>CHECKLIST FECHAMENTO</strong><span>Em breve</span></button>
     <button class="menuBtn on" onclick="abrirModulo('itens-diarios')"><strong>CHECKLIST ITENS DIÁRIOS</strong><span>Conferência de itens para o dia seguinte</span></button>
     <button class="menuBtn" onclick="abrirModulo('itens-sexta')"><strong>CHECKLIST ITENS SEXTA-FEIRA</strong><span>Em breve</span></button>
-    <button class="menuBtn" onclick="abrirModulo('bebidas')"><strong>CHECKLIST BEBIDAS</strong><span>Em breve</span></button>
+    <button class="menuBtn" onclick="abrirModulo('bebidas')"><strong>CHECKLIST BEBIDAS</strong><span>Contagem de fardos e unidades</span></button>
     <button class="menuBtn" onclick="abrirModulo('estoque')"><strong>CONTAGEM DE ESTOQUE</strong><span>Em breve</span></button>
   </section>
 
   <section id="appChecklist" class="hidden">
-    <div class="topActions"><button class="secondary back" onclick="voltarMenu()">← Menu</button><b>CHECKLIST ITENS DIÁRIOS</b></div>
+    <div class="topActions"><button class="secondary back" onclick="voltarMenu()">← Menu</button><b id="moduleTitle">CHECKLIST ITENS DIÁRIOS</b></div>
     <section id="lista"></section>
     <div class="admin">
       <label>Nome do funcionário</label>
       <input id="funcionario" placeholder="Digite seu nome">
     </div>
-    <div class="admin">
+    <div class="admin" id="extraBox">
       <label>Algum item a mais?</label>
       <input id="itemExtra" maxlength="100" placeholder="Digite aqui se precisar de algo fora da lista" oninput="salvarLocal(); atualizarExtraCount()">
       <div class="unit" id="extraCount">0/100 caracteres</div>
@@ -60,17 +60,25 @@
 <script>
 const SUPABASE_URL = 'https://kajfnpkokwmycfmnaiif.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImthamZucGtva3dteWNmbW5haWlmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc0ODc3NzUsImV4cCI6MjA5MzA2Mzc3NX0.ScwxJFcdz3M3gv6oRf097qaqx_UJdZ7l0aVt61KIdCo';
-let itens=[], categoriaAtual='Dispensa', moduloAtual=null, editandoEnviado=false;
+let itens=[], bebidas=[], categoriaAtual='Dispensa', moduloAtual=null, editandoEnviado=false;
+const BEBIDAS_MODELO=[
+ ['COCA PET 250ML NORMAL',12],['COCA PET 250ML ZERO',12],['COCA LATA NORMAL',6],['COCA LATA ZERO',6],
+ ['COCA 600ML NORMAL',12],['COCA 600ML ZERO',12],['COCA 1L NORMAL',6],['COCA 1L ZERO',6],
+ ['SPRITE PET',12],['SPRITE LATA',6],['FANTA UVA PET',12],['FANTA UVA LATA',6],['GUARANÁ LATA',12],['GUARANÁ 1L',12]
+].map(([produto,porFardo],idx)=>({id:'beb_'+idx,produto,porFardo,fardos:'',unidades:''}));
 
 function abrirModulo(modulo){
-  if(modulo!=='itens-diarios'){setStatus('Este módulo ainda será configurado.');return}
+  if(!['itens-diarios','bebidas'].includes(modulo)){setStatus('Este módulo ainda será configurado.');return}
   moduloAtual=modulo;
   editandoEnviado=false;
   const enviadoHoje = localStorage.getItem(submittedKey());
   if(enviadoHoje){
     editandoEnviado = confirm('DESEJA EDITAR CHECKLIST?');
   }
-  menuPrincipal.classList.add('hidden'); appChecklist.classList.remove('hidden'); footerChecklist.classList.remove('hidden'); carregarItens(editandoEnviado);
+  menuPrincipal.classList.add('hidden'); appChecklist.classList.remove('hidden'); footerChecklist.classList.remove('hidden');
+  moduleTitle.textContent = modulo==='bebidas' ? 'CHECKLIST BEBIDAS' : 'CHECKLIST ITENS DIÁRIOS';
+  extraBox.classList.toggle('hidden', modulo==='bebidas');
+  if(modulo==='bebidas') carregarBebidas(editandoEnviado); else carregarItens(editandoEnviado);
 }
 function voltarMenu(){moduloAtual=null; appChecklist.classList.add('hidden'); footerChecklist.classList.add('hidden'); menuPrincipal.classList.remove('hidden'); setStatus('')}
 
@@ -90,14 +98,14 @@ function pedirFuncionarioObrigatorio(){
   }
   funcionario.value=nome; salvarLocal(); return nome;
 }
-function localKey(){return 'bils_checklist_draft_'+hojeISO()}
-function submittedKey(){return 'bils_checklist_submitted_'+hojeISO()}
+function localKey(){return `bils_${moduloAtual||'checklist'}_draft_${hojeISO()}`}
+function submittedKey(){return `bils_${moduloAtual||'checklist'}_submitted_${hojeISO()}`}
 function supaHeaders(extra={}){return {'apikey':SUPABASE_ANON_KEY,'Authorization':'Bearer '+SUPABASE_ANON_KEY,'Content-Type':'application/json',...extra}}
 async function supa(path,opt={}){const r=await fetch(`${SUPABASE_URL}/rest/v1/${path}`,{...opt,headers:supaHeaders(opt.headers||{})});const txt=await r.text();if(!r.ok)throw new Error(txt||r.statusText);return txt?JSON.parse(txt):null}
 function perfilMinimo(dataAlvo){const [y,m,d]=dataAlvo.split('-').map(Number);const wd=new Date(Date.UTC(y,m-1,d)).getUTCDay();if(wd===5)return 'sexta';if(wd===0||wd===6)return 'sab_dom';return 'seg_qui'}
-function salvarLocal(){localStorage.setItem(localKey(),JSON.stringify({funcionario:funcionario.value,item_extra:itemExtra?.value||'',itens:itens.map(i=>({id:i.id,quantidade_atual:i.quantidade_atual??'',observacao:i.observacao??'',nao_precisa:!!i.nao_precisa}))}))}
-function estadoAtual(){return {funcionario:funcionario.value,item_extra:itemExtra?.value||'',itens:itens.map(i=>({id:i.id,quantidade_atual:i.quantidade_atual??'',observacao:i.observacao??'',nao_precisa:!!i.nao_precisa}))}}
-function carregarLocal(usarEnviado=false){try{const raw=localStorage.getItem(usarEnviado?submittedKey():localKey()); if(!raw)return; const data=JSON.parse(raw); if(data.funcionario) funcionario.value=data.funcionario; if(itemExtra) itemExtra.value=(data.item_extra||'').slice(0,100); atualizarExtraCount(); const map=new Map((data.itens||[]).map(i=>[i.id,i])); itens=itens.map(i=>map.has(i.id)?{...i,...map.get(i.id)}:i)}catch(e){}}
+function salvarLocal(){localStorage.setItem(localKey(),JSON.stringify({funcionario:funcionario.value,item_extra:itemExtra?.value||'',itens:itens.map(i=>({id:i.id,quantidade_atual:i.quantidade_atual??'',observacao:i.observacao??'',nao_precisa:!!i.nao_precisa})),bebidas:bebidas.map(b=>({id:b.id,fardos:b.fardos??'',unidades:b.unidades??''}))}))}
+function estadoAtual(){return {funcionario:funcionario.value,item_extra:itemExtra?.value||'',itens:itens.map(i=>({id:i.id,quantidade_atual:i.quantidade_atual??'',observacao:i.observacao??'',nao_precisa:!!i.nao_precisa})),bebidas:bebidas.map(b=>({id:b.id,fardos:b.fardos??'',unidades:b.unidades??''}))}}
+function carregarLocal(usarEnviado=false){try{const raw=localStorage.getItem(usarEnviado?submittedKey():localKey()); if(!raw)return; const data=JSON.parse(raw); if(data.funcionario) funcionario.value=data.funcionario; if(itemExtra) itemExtra.value=(data.item_extra||'').slice(0,100); atualizarExtraCount(); const map=new Map((data.itens||[]).map(i=>[i.id,i])); itens=itens.map(i=>map.has(i.id)?{...i,...map.get(i.id)}:i); const bmap=new Map((data.bebidas||[]).map(i=>[i.id,i])); bebidas=bebidas.map(b=>bmap.has(b.id)?{...b,...bmap.get(b.id)}:b)}catch(e){}}
 
 async function carregarItens(usarEnviado=false){
   try{
@@ -110,6 +118,22 @@ async function carregarItens(usarEnviado=false){
   }catch(e){setStatus('Erro ao carregar itens:\n'+e.message)}
 }
 function esc(v){return String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
+function carregarBebidas(usarEnviado=false){
+  bebidas=BEBIDAS_MODELO.map(b=>({...b,fardos:'',unidades:''}));
+  carregarLocal(usarEnviado); renderBebidas();
+  setStatus(`Checklist de bebidas feito na ${diaSemanaBR(hojeISO())}`);
+}
+function renderBebidas(){
+  lista.innerHTML=`<div class="catTitle">Bebidas</div>`+bebidas.map(b=>`<div class="bebidaRow">
+    <div class="bebidaName">${esc(b.produto)}<div class="bebidaRef">fd c/ ${b.porFardo}</div></div>
+    <div><span class="unit">Fardos</span><input id="fd_${b.id}" class="miniInput" type="text" inputmode="numeric" value="${b.fardos??''}" placeholder="0" oninput="atualizarBebida('${b.id}','fardos',this.value)"></div>
+    <div><span class="unit">Unidades</span><input id="un_${b.id}" class="miniInput" type="text" inputmode="numeric" value="${b.unidades??''}" placeholder="0" oninput="atualizarBebida('${b.id}','unidades',this.value)"></div>
+  </div>`).join('');
+  atualizarResumoBebidas();
+}
+function atualizarBebida(id,campo,valor){const b=bebidas.find(x=>x.id===id); if(!b)return; b[campo]=valor; salvarLocal(); atualizarResumoBebidas()}
+function bebidasIncompletas(){return bebidas.filter(b=>b.fardos===''||b.fardos==null||b.unidades===''||b.unidades==null)}
+function atualizarResumoBebidas(){const p=bebidas.filter(b=>b.fardos!==''&&b.fardos!=null&&b.unidades!==''&&b.unidades!=null).length; summary.textContent=`${p}/${bebidas.length} bebidas preenchidas`; if(typeof btnEnviar!=='undefined')btnEnviar.disabled=p!==bebidas.length}
 function render(){
   const ordem=['Geladeira','Freezer','Dispensa'];
   const grupos=ordem.map(cat=>[cat,itens.filter(i=>i.categoria===cat)]).filter(([,arr])=>arr.length);
@@ -154,7 +178,21 @@ function atualizarLinha(id){
 function itensIncompletos(){return itens.filter(i=>!i.nao_precisa&&(i.quantidade_atual===''||i.quantidade_atual==null))}
 function atualizarResumo(){const p=itens.filter(i=>i.nao_precisa||(i.quantidade_atual!==''&&i.quantidade_atual!=null)).length;const f=itens.filter(i=>!i.nao_precisa&&i.quantidade_atual!==''&&Math.max(0,num(i.minimo_dia)-num(i.quantidade_atual))>0).length;summary.textContent=`${p}/${itens.length} itens preenchidos | ${f} para levar`; if(typeof btnEnviar!=='undefined')btnEnviar.disabled=p!==itens.length}
 function atualizarExtraCount(){if(extraCount&&itemExtra)extraCount.textContent=`${itemExtra.value.length}/100 caracteres`}
+async function enviarChecklistBebidas(){
+  const funcionario=pedirFuncionarioObrigatorio();
+  const faltando=bebidasIncompletas(); if(faltando.length){alert(`Preencha fardos e unidades de todas as bebidas. Faltam ${faltando.length}.`); setStatus(`Checklist incompleto. Faltam ${faltando.length} bebidas.`); return}
+  const data_checklist=hojeISO(), data_alvo=data_checklist;
+  const rows=bebidas.map(b=>({data_checklist,data_alvo,categoria:'BEBIDAS',produto:b.produto,minimo_dia:0,quantidade_atual:num(b.fardos)*b.porFardo+num(b.unidades),precisa_trazer:0,observacao:`Funcionário: ${funcionario} | Fardos: ${b.fardos} | Unidades: ${b.unidades} | fd c/ ${b.porFardo}`,origem:'checklist_bebidas',resolvido:true}));
+  try{
+    setStatus('Enviando checklist de bebidas...');
+    await supa(`checklist_levar?data_checklist=eq.${data_checklist}&origem=eq.checklist_bebidas`,{method:'DELETE',headers:{Prefer:'return=minimal'}});
+    await supa('checklist_levar',{method:'POST',headers:{Prefer:'return=minimal'},body:JSON.stringify(rows)});
+    setStatus(`Checklist de bebidas enviado com sucesso!\nFuncionário: ${funcionario}`);
+    localStorage.setItem(submittedKey(), JSON.stringify(estadoAtual())); localStorage.removeItem(localKey()); funcionario.value='';
+  }catch(e){setStatus('Erro ao enviar checklist de bebidas:\n'+e.message)}
+}
 async function enviarChecklist(){
+  if(moduloAtual==='bebidas') return enviarChecklistBebidas();
   const funcionario=pedirFuncionarioObrigatorio();
   const faltando=itensIncompletos(); if(faltando.length){alert(`Preencha todos os itens ou marque Não precisa. Faltam ${faltando.length}.`); setStatus(`Checklist incompleto. Faltam ${faltando.length} itens.`); return}
   const data_checklist=hojeISO(), data_alvo=addDaysISO(data_checklist,1);
