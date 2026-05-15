@@ -174,7 +174,7 @@ async function enviarEntrada(sec){
 }
 function carregarItensSexta(usarEnviado=false){
   itens=SEXTA_ITENS_MODELO.map(i=>({...i,quantidade_atual:'',observacao:''}));
-  carregarLocal(usarEnviado); render();
+  carregarLocal(usarEnviado); renderSexta();
   setStatus(`Checklist de itens da sexta-feira feito em ${fmtBR(hojeISO())}.`);
 }
 async function carregarItens(usarEnviado=false){
@@ -205,6 +205,27 @@ function atualizarBebida(id,campo,valor){const b=bebidas.find(x=>x.id===id); if(
 function bebidaPreenchida(b){return (b.fardos!==''&&b.fardos!=null)||(b.unidades!==''&&b.unidades!=null)}
 function bebidasIncompletas(){return bebidas.filter(b=>!bebidaPreenchida(b))}
 function atualizarResumoBebidas(){const p=bebidas.filter(bebidaPreenchida).length; summary.textContent=`${p}/${bebidas.length} bebidas preenchidas`; if(typeof btnEnviar!=='undefined')btnEnviar.disabled=p!==bebidas.length}
+
+function renderSexta(){
+  lista.innerHTML=`<div class="catTitle">Sexta-feira</div>`+itens.map(i=>{
+    const marcadoPrecisa=!i.nao_precisa&&i.quantidade_atual!==''&&i.quantidade_atual!=null;
+    return `<div class="card">
+      <div class="head"><div><div class="prod">${esc(i.produto)}</div><div class="unit">Referência: ${fmtNum(i.minimo_dia)} ${esc(i.unidade||'')}</div></div></div>
+      <div class="grid" style="margin-top:10px">
+        <button class="${marcadoPrecisa?'':'secondary'}" onclick="marcarSexta('${i.id}',true)">Vai precisar</button>
+        <button class="${i.nao_precisa?'':'secondary'}" onclick="marcarSexta('${i.id}',false)">Não precisa</button>
+      </div>
+    </div>`
+  }).join('');
+  atualizarResumo();
+}
+function marcarSexta(id,vaiPrecisar){
+  const item=itens.find(i=>i.id===id); if(!item)return;
+  item.nao_precisa=!vaiPrecisar;
+  item.quantidade_atual=vaiPrecisar?'0':'';
+  salvarLocal(); renderSexta();
+}
+
 function render(){
   const ordem=['Sexta-feira','Geladeira','Freezer','Dispensa'];
   const extras=[...new Set(itens.map(i=>i.categoria).filter(cat=>!ordem.includes(cat)))];
