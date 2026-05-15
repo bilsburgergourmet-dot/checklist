@@ -33,7 +33,7 @@
     <button class="menuBtn" onclick="abrirModulo('entrada')"><strong>CHECKLIST ENTRADA</strong><span>Cozinha e atendimento</span></button>
     <button class="menuBtn" onclick="abrirModulo('fechamento')"><strong>CHECKLIST FECHAMENTO</strong><span>Em breve</span></button>
     <button class="menuBtn" onclick="abrirModulo('itens-diarios')"><strong>CHECKLIST ITENS DIÁRIOS</strong><span>Conferência de itens para o dia seguinte</span></button>
-    <button class="menuBtn" onclick="abrirModulo('itens-sexta')"><strong>CHECKLIST ITENS SEXTA-FEIRA</strong><span>Em breve</span></button>
+    <button class="menuBtn" onclick="abrirModulo('itens-sexta')"><strong>CHECKLIST ITENS SEXTA-FEIRA</strong><span>Conferência fixa da sexta-feira</span></button>
     <button class="menuBtn" onclick="abrirModulo('bebidas')"><strong>CHECKLIST BEBIDAS</strong><span>Contagem de fardos e unidades</span></button>
     <button class="menuBtn" onclick="abrirModulo('estoque')"><strong>CONTAGEM DE ESTOQUE</strong><span>Em breve</span></button>
   </section>
@@ -68,6 +68,19 @@ const BEBIDAS_MODELO=[
 // Quantidades mínimas necessárias para compra de bebidas.
 // Por enquanto ficam zeradas; quando Alyson passar os mínimos, atualizar aqui.
 const BEBIDAS_NECESSARIO={};
+const SEXTA_ITENS_MODELO=[
+ ['CAIXAS COMBO',1,'fardo fechado'],['SAL',1,'pct fechado'],['AÇÚCAR',1,'pct fechado'],['AÇÚCAR MASCAVO',1,'pct fechado'],
+ ['OVOMALTINE',1,'pct fechado'],['PÁPRICA',1,'pct fechado'],['ALHO EM PÓ',1,'pct fechado'],['GLUTAMATO',1,'pote fechado'],
+ ['PIMENTA MOIDA',1,'pct fechado'],['MARGARINA',1,'pote 3kg'],['GORDURA VEGETAL',5,'kg'],['PÃO ÁRABE',2,'pct fechado'],
+ ['COPO 50ML',2,'pct fechado'],['COPO 150ML',2,'pct fechado'],['POTE DE MOLHOS',3,'pct fechado'],['HAMBURGUEIRA G',0.5,'fardo'],
+ ['HAMBURGUEIRA P',0.5,'fardo'],['GUARDANAPO',10,'unidades'],['LACRE DAS CAIXAS',1,'pct fechado'],['SACOLA BRANCA',1,'fardo fechado'],
+ ['SHOYU',1,'L fechado'],['GRANULADO CHOCOLATE',0.5,'pote'],['GRANULADO MORANGO',0.5,'pote'],['BASE PARA CHANTILY',2,'L fechado'],
+ ['GÁS DO CHANTILY',8,'unidades'],['SACOLA DELIVERY M',1,'cx fechada'],['SACOLA DELIVERY P',1,'fardo fechado'],['MAIONESE',12,'kg'],
+ ['LUVA',10,'pacotes'],['BARBECUE',1,'pote fechado'],['KETCHUP',1,'pote fechado'],['KETCHUP SACHÊ',2,'caixas'],
+ ['GARRAFAS E TAMPAS',50,'unidades'],['PAZINHA PARA MOLHOS',1,'pct fechado'],['GARFO DOS BURGERS',2,'pct fechado'],['GARFO DA BATATA',2,'pct fechado'],
+ ['ÁLCOOL',1,'L fechado'],['GRAMPO',5,'fileiras'],['BOBINA IMPRESSORA',7,'unidades'],['BOBINA MAQUINETA',5,'unidades'],
+ ['INSUFILM GRANDE',1,'unidade'],['INSUFILM PEQUENO',1,'unid fechado'],['SACOLA ESTRELA',1,'unid fechado']
+].map(([produto,minimo_dia,unidade],idx)=>({id:'sexta_'+idx,categoria:'Sexta-feira',produto,minimo_dia,unidade,ordem:(idx+1)*10,ativo:true,quantidade_atual:'',observacao:''}));
 const ENTRADA_MODELO={
   cozinha:[
     ['coz_1','Ligar coifa'],['coz_2','Filtrar o óleo'],['coz_3','Cebola caramelizada feita'],
@@ -86,7 +99,7 @@ const ENTRADA_MODELO={
 };
 
 function abrirModulo(modulo){
-  if(!['entrada','itens-diarios','bebidas'].includes(modulo)){setStatus('Este módulo ainda será configurado.');return}
+  if(!['entrada','itens-diarios','itens-sexta','bebidas'].includes(modulo)){setStatus('Este módulo ainda será configurado.');return}
   moduloAtual=modulo;
   editandoEnviado=false;
   const enviadoHoje = localStorage.getItem(submittedKey());
@@ -94,9 +107,9 @@ function abrirModulo(modulo){
     editandoEnviado = confirm('DESEJA EDITAR CHECKLIST?');
   }
   menuPrincipal.classList.add('hidden'); appChecklist.classList.remove('hidden'); footerChecklist.classList.toggle('hidden', modulo==='entrada');
-  moduleTitle.textContent = modulo==='bebidas' ? 'CHECKLIST BEBIDAS' : modulo==='entrada' ? 'CHECKLIST ENTRADA' : 'CHECKLIST ITENS DIÁRIOS';
+  moduleTitle.textContent = modulo==='bebidas' ? 'CHECKLIST BEBIDAS' : modulo==='entrada' ? 'CHECKLIST ENTRADA' : modulo==='itens-sexta' ? 'CHECKLIST ITENS SEXTA-FEIRA' : 'CHECKLIST ITENS DIÁRIOS';
   extraBox.classList.toggle('hidden', modulo==='bebidas'||modulo==='entrada');
-  if(modulo==='bebidas') carregarBebidas(editandoEnviado); else if(modulo==='entrada') carregarEntrada(editandoEnviado); else carregarItens(editandoEnviado);
+  if(modulo==='bebidas') carregarBebidas(editandoEnviado); else if(modulo==='entrada') carregarEntrada(editandoEnviado); else if(modulo==='itens-sexta') carregarItensSexta(editandoEnviado); else carregarItens(editandoEnviado);
 }
 function voltarMenu(){moduloAtual=null; appChecklist.classList.add('hidden'); footerChecklist.classList.add('hidden'); menuPrincipal.classList.remove('hidden'); setStatus('')}
 
@@ -159,6 +172,11 @@ async function enviarEntrada(sec){
   const rows=entrada[sec].filter(entradaAtiva).map(i=>({data_checklist,data_alvo,categoria:`ENTRADA ${titulo.toUpperCase()}`,produto:i.nome,minimo_dia:1,quantidade_atual:1,precisa_trazer:0,observacao:[`Funcionário: ${funcionario}`,entradaObs(i)||''].filter(Boolean).join(' | '),origem,resolvido:true}));
   try{setStatus(`Enviando checklist entrada ${titulo}...`); await supa(`checklist_levar?data_checklist=eq.${data_checklist}&origem=eq.${origem}`,{method:'DELETE',headers:{Prefer:'return=minimal'}}); await supa('checklist_levar',{method:'POST',headers:{Prefer:'return=minimal'},body:JSON.stringify(rows)}); localStorage.setItem(submittedKey(), JSON.stringify(estadoAtual())); localStorage.removeItem(localKey()); setStatus(`Checklist entrada ${titulo} enviado com sucesso!\nFuncionário: ${funcionario}`)}catch(e){setStatus(`Erro ao enviar entrada ${titulo}:\n`+e.message)}
 }
+function carregarItensSexta(usarEnviado=false){
+  itens=SEXTA_ITENS_MODELO.map(i=>({...i,quantidade_atual:'',observacao:''}));
+  carregarLocal(usarEnviado); render();
+  setStatus(`Checklist de itens da sexta-feira feito em ${fmtBR(hojeISO())}.`);
+}
 async function carregarItens(usarEnviado=false){
   try{
     const d=hojeISO(); const dataAlvo=addDaysISO(d,1); const campo=perfilMinimo(dataAlvo);
@@ -188,8 +206,9 @@ function bebidaPreenchida(b){return (b.fardos!==''&&b.fardos!=null)||(b.unidades
 function bebidasIncompletas(){return bebidas.filter(b=>!bebidaPreenchida(b))}
 function atualizarResumoBebidas(){const p=bebidas.filter(bebidaPreenchida).length; summary.textContent=`${p}/${bebidas.length} bebidas preenchidas`; if(typeof btnEnviar!=='undefined')btnEnviar.disabled=p!==bebidas.length}
 function render(){
-  const ordem=['Geladeira','Freezer','Dispensa'];
-  const grupos=ordem.map(cat=>[cat,itens.filter(i=>i.categoria===cat)]).filter(([,arr])=>arr.length);
+  const ordem=['Sexta-feira','Geladeira','Freezer','Dispensa'];
+  const extras=[...new Set(itens.map(i=>i.categoria).filter(cat=>!ordem.includes(cat)))];
+  const grupos=[...ordem,...extras].map(cat=>[cat,itens.filter(i=>i.categoria===cat)]).filter(([,arr])=>arr.length);
   lista.innerHTML=grupos.length?grupos.map(([cat,arr])=>`<div class="catTitle">${cat}</div><div class="listHead"><div>Item</div><div>Precisa</div><div>Tem</div><div>Trazer</div><div></div></div>`+arr.map(i=>{
     const atual=i.quantidade_atual===''?'':num(i.quantidade_atual);
     const precisa=i.nao_precisa?0:(i.quantidade_atual===''?null:Math.max(0,num(i.minimo_dia)-atual));
@@ -248,13 +267,14 @@ async function enviarChecklist(){
   if(moduloAtual==='bebidas') return enviarChecklistBebidas();
   const funcionario=pedirFuncionarioObrigatorio();
   const faltando=itensIncompletos(); if(faltando.length){alert(`Preencha todos os itens ou marque Não precisa. Faltam ${faltando.length}.`); setStatus(`Checklist incompleto. Faltam ${faltando.length} itens.`); return}
-  const data_checklist=hojeISO(), data_alvo=addDaysISO(data_checklist,1);
-  const rows=itens.map(i=>{const atual=i.nao_precisa?num(i.minimo_dia):(i.quantidade_atual===''?0:num(i.quantidade_atual));const precisa=i.nao_precisa?0:Math.max(0,num(i.minimo_dia)-atual);return {data_checklist,data_alvo,categoria:i.categoria,produto:i.produto,minimo_dia:num(i.minimo_dia),quantidade_atual:atual,precisa_trazer:precisa,observacao:[funcionario?`Funcionário: ${funcionario}`:'',i.nao_precisa?'Não precisa marcado':'',i.observacao||''].filter(Boolean).join(' | ')||null,origem:'checklist_webapp',resolvido:precisa<=0}});
+  const data_checklist=hojeISO(), data_alvo=moduloAtual==='itens-sexta'?data_checklist:addDaysISO(data_checklist,1);
+  const origemChecklist=moduloAtual==='itens-sexta'?'checklist_itens_sexta':'checklist_webapp';
+  const rows=itens.map(i=>{const atual=i.nao_precisa?num(i.minimo_dia):(i.quantidade_atual===''?0:num(i.quantidade_atual));const precisa=i.nao_precisa?0:Math.max(0,num(i.minimo_dia)-atual);return {data_checklist,data_alvo,categoria:i.categoria,produto:i.produto,minimo_dia:num(i.minimo_dia),quantidade_atual:atual,precisa_trazer:precisa,observacao:[funcionario?`Funcionário: ${funcionario}`:'',i.nao_precisa?'Não precisa marcado':'',i.observacao||''].filter(Boolean).join(' | ')||null,origem:origemChecklist,resolvido:precisa<=0}});
   const extra=(itemExtra?.value||'').trim().slice(0,100);
-  if(extra) rows.push({data_checklist,data_alvo,categoria:'EXTRA',produto:'ITEM A MAIS',minimo_dia:0,quantidade_atual:0,precisa_trazer:0,observacao:`Funcionário: ${funcionario} | Item a mais: ${extra}`,origem:'checklist_webapp',resolvido:false});
+  if(extra) rows.push({data_checklist,data_alvo,categoria:'EXTRA',produto:'ITEM A MAIS',minimo_dia:0,quantidade_atual:0,precisa_trazer:0,observacao:`Funcionário: ${funcionario} | Item a mais: ${extra}`,origem:origemChecklist,resolvido:false});
   try{
     setStatus('Enviando checklist para o Supabase...');
-    await supa(`checklist_levar?data_checklist=eq.${data_checklist}&origem=eq.checklist_webapp`,{method:'DELETE',headers:{Prefer:'return=minimal'}});
+    await supa(`checklist_levar?data_checklist=eq.${data_checklist}&origem=eq.${origemChecklist}`,{method:'DELETE',headers:{Prefer:'return=minimal'}});
     await supa('checklist_levar',{method:'POST',headers:{Prefer:'return=minimal'},body:JSON.stringify(rows)});
     const total=rows.filter(r=>r.precisa_trazer>0).length;
     setStatus(`Checklist enviado com sucesso!\nFuncionário: ${funcionario}\nData alvo: ${fmtBR(data_alvo)}\nItens para levar: ${total}`);
