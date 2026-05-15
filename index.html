@@ -65,6 +65,9 @@ const BEBIDAS_MODELO=[
  ['COCA 600ML NORMAL',12],['COCA 600ML ZERO',12],['COCA 1L NORMAL',6],['COCA 1L ZERO',6],
  ['SPRITE PET',12],['SPRITE LATA',6],['FANTA UVA PET',12],['FANTA UVA LATA',6],['GUARANÁ LATA',12],['GUARANÁ 1L',12]
 ].map(([produto,porFardo],idx)=>({id:'beb_'+idx,produto,porFardo,fardos:'',unidades:''}));
+// Quantidades mínimas necessárias para compra de bebidas.
+// Por enquanto ficam zeradas; quando Alyson passar os mínimos, atualizar aqui.
+const BEBIDAS_NECESSARIO={};
 const ENTRADA_MODELO={
   cozinha:[
     ['coz_1','Ligar coifa'],['coz_2','Filtrar o óleo'],['coz_3','Cebola caramelizada feita'],
@@ -232,7 +235,7 @@ async function enviarChecklistBebidas(){
   const funcionario=pedirFuncionarioObrigatorio();
   const faltando=bebidasIncompletas(); if(faltando.length){alert(`Preencha fardos ou unidades de todas as bebidas. Se não tiver, digite 0. Faltam ${faltando.length}.`); setStatus(`Checklist incompleto. Faltam ${faltando.length} bebidas.`); return}
   const data_checklist=hojeISO(), data_alvo=data_checklist;
-  const rows=bebidas.map(b=>{const f=b.fardos===''||b.fardos==null?'0':b.fardos; const u=b.unidades===''||b.unidades==null?'0':b.unidades; return {data_checklist,data_alvo,categoria:'BEBIDAS',produto:b.produto,minimo_dia:0,quantidade_atual:num(f)*b.porFardo+num(u),precisa_trazer:0,observacao:`Funcionário: ${funcionario} | Fardos: ${f} | Unidades: ${u} | fd c/ ${b.porFardo}`,origem:'checklist_bebidas',resolvido:true}});
+  const rows=bebidas.map(b=>{const f=b.fardos===''||b.fardos==null?'0':b.fardos; const u=b.unidades===''||b.unidades==null?'0':b.unidades; const atual=num(f)*b.porFardo+num(u); const minimo=num(BEBIDAS_NECESSARIO[b.produto]||0); const precisa=Math.max(0,minimo-atual); return {data_checklist,data_alvo,categoria:'BEBIDAS',produto:b.produto,minimo_dia:minimo,quantidade_atual:atual,precisa_trazer:precisa,observacao:`Funcionário: ${funcionario} | Fardos: ${f} | Unidades: ${u} | fd c/ ${b.porFardo}`,origem:'checklist_bebidas',resolvido:precisa<=0}});
   try{
     setStatus('Enviando checklist de bebidas...');
     await supa(`checklist_levar?data_checklist=eq.${data_checklist}&origem=eq.checklist_bebidas`,{method:'DELETE',headers:{Prefer:'return=minimal'}});
