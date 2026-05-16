@@ -30,15 +30,15 @@
 <main>
   <div class="status hidden" id="status"></div>
   <section id="menuPrincipal" class="menu">
-    <button class="menuBtn" data-mod="entrada-cozinha" onclick="abrirModulo('entrada-cozinha')"><strong>🍳 CHECKLIST ENTRADA COZINHA</strong><span>Cozinha</span></button>
+    <button class="menuBtn" data-mod="entrada-cozinha" onclick="abrirModulo('entrada-cozinha')"><strong>🍔 CHECKLIST ENTRADA COZINHA</strong><span>Cozinha</span></button>
     <button class="menuBtn" data-mod="entrada-atendimento" onclick="abrirModulo('entrada-atendimento')"><strong>🛎️ CHECKLIST ENTRADA ATENDIMENTO</strong><span>Atendimento</span></button>
     <button class="menuBtn" data-mod="fechamento-cozinha" onclick="abrirModulo('fechamento-cozinha')"><strong>🍟 CHECKLIST FECHAMENTO COZINHA</strong><span>Foto obrigatória da fritadeira</span></button>
     <button class="menuBtn" data-mod="fechamento-atendimento" onclick="abrirModulo('fechamento-atendimento')"><strong>🧾 CHECKLIST FECHAMENTO ATENDIMENTO</strong><span>Em breve</span></button>
     <button class="menuBtn" data-mod="itens-diarios" onclick="abrirModulo('itens-diarios')"><strong>CHECKLIST ITENS DIÁRIOS</strong><span>Conferência de itens para o dia seguinte</span></button>
     <button class="menuBtn" data-mod="itens-sexta" onclick="abrirModulo('itens-sexta')"><strong>CHECKLIST ITENS SEXTA-FEIRA</strong><span>Conferência fixa da sexta-feira</span></button>
-    <button class="menuBtn" data-mod="bebidas" onclick="abrirModulo('bebidas')"><strong>CHECKLIST BEBIDAS</strong><span>Contagem de fardos e unidades</span></button>
+    <button class="menuBtn" data-mod="bebidas" onclick="abrirModulo('bebidas')"><strong>🥤 CHECKLIST BEBIDAS</strong><span>Contagem de fardos e unidades</span></button>
     <button class="menuBtn" onclick="abrirModulo('estoque')"><strong>CONTAGEM DE ESTOQUE</strong><span>Em breve</span></button>
-    <button class="menuBtn" data-mod="caixa" onclick="abrirModulo('caixa')"><strong>CONFERÊNCIA DE CAIXA</strong><span>Maquineta e dinheiro</span></button>
+    <button class="menuBtn" data-mod="caixa" onclick="abrirModulo('caixa')"><strong>💰 CONFERÊNCIA DE CAIXA</strong><span>Maquineta e dinheiro</span></button>
   </section>
 
   <section id="appChecklist" class="hidden">
@@ -259,7 +259,7 @@ function criarEntrada(){return {cozinha:ENTRADA_MODELO.cozinha.map(([id,nome,obs
 function secEntradaAtual(){return moduloAtual==='entrada-atendimento'?'atendimento':'cozinha'}
 function carregarEntrada(usarEnviado=false){entrada=criarEntrada(); carregarLocal(usarEnviado); renderEntrada(); setStatus(`${usarEnviado?'Checklist enviado. Dados carregados para reenvio.':'Checklist de entrada carregado.'}`)}
 function renderEntrada(){const sec=secEntradaAtual(); lista.innerHTML=renderEntradaSecao(sec); atualizarResumoEntrada()}
-function renderEntradaSecao(sec){const titulo=sec==='cozinha'?'Cozinha':'Atendimento'; const ativos=entrada[sec].filter(entradaAtiva); return `<div class="entradaBox"><div class="entradaTitle">${sec==='cozinha'?'🍳':'🛎️'} ${titulo}</div>${ativos.map(i=>`<label class="checkRow"><input type="checkbox" ${i.feito?'checked':''} onchange="marcarEntrada('${sec}','${i.id}',this.checked)"><div><div class="checkText">${esc(i.nome)}</div>${entradaObs(i)?`<div class="checkObs">${esc(entradaObs(i))}</div>`:''}</div></label>`).join('')}</div>`}
+function renderEntradaSecao(sec){const titulo=sec==='cozinha'?'Cozinha':'Atendimento'; const ativos=entrada[sec].filter(entradaAtiva); return `<div class="entradaBox"><div class="entradaTitle">${sec==='cozinha'?'🍔':'🛎️'} ${titulo}</div>${ativos.map(i=>`<label class="checkRow"><input type="checkbox" ${i.feito?'checked':''} onchange="marcarEntrada('${sec}','${i.id}',this.checked)"><div><div class="checkText">${esc(i.nome)}</div>${entradaObs(i)?`<div class="checkObs">${esc(entradaObs(i))}</div>`:''}</div></label>`).join('')}</div>`}
 function marcarEntrada(sec,id,feito){const item=entrada[sec].find(i=>i.id===id); if(!item)return; item.feito=feito; salvarLocal(); atualizarResumoEntrada()}
 function entradaIncompleta(sec){return entrada[sec].filter(i=>entradaAtiva(i)&&!i.feito)}
 function atualizarResumoEntrada(){const sec=secEntradaAtual();const ativos=entrada[sec].filter(entradaAtiva); const feitos=ativos.filter(i=>i.feito).length; summary.textContent=`${feitos}/${ativos.length} itens marcados`; if(typeof btnEnviar!=='undefined'){btnEnviar.disabled=feitos!==ativos.length;btnEnviar.textContent=localStorage.getItem(submittedKey())?'Reenviar checklist':'Enviar checklist'}}
