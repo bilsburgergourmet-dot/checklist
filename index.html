@@ -42,7 +42,7 @@
   <section id="appChecklist" class="hidden">
     <div class="topActions"><button class="secondary back" onclick="voltarMenu()">← Menu</button><b id="moduleTitle">CHECKLIST ITENS DIÁRIOS</b></div>
     <section id="lista"></section>
-    <div class="admin">
+    <div class="admin" id="funcionarioBox">
       <label>Nome do funcionário</label>
       <input id="funcionario" placeholder="Digite seu nome">
     </div>
@@ -142,6 +142,7 @@ function abrirModulo(modulo){
   }
   menuPrincipal.classList.add('hidden'); appChecklist.classList.remove('hidden'); footerChecklist.classList.toggle('hidden', modulo==='entrada'||modulo==='caixa');
   moduleTitle.textContent = modulo==='caixa' ? 'CONFERÊNCIA DE CAIXA' : modulo==='bebidas' ? 'CHECKLIST BEBIDAS' : modulo==='entrada' ? 'CHECKLIST ENTRADA' : modulo==='itens-sexta' ? 'CHECKLIST ITENS SEXTA-FEIRA' : 'CHECKLIST ITENS DIÁRIOS';
+  funcionarioBox.classList.toggle('hidden', modulo==='caixa');
   extraBox.classList.toggle('hidden', modulo==='bebidas'||modulo==='entrada'||modulo==='caixa');
   if(modulo==='caixa') carregarCaixa(); else if(modulo==='bebidas') carregarBebidas(editandoEnviado); else if(modulo==='entrada') carregarEntrada(editandoEnviado); else if(modulo==='itens-sexta') carregarItensSexta(editandoEnviado); else carregarItens(editandoEnviado);
 }
@@ -176,9 +177,10 @@ function caixaKey(){return `bils_caixa_${hojeISO()}`}
 function dinheiroBR(v){return Number(v||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}
 function carregarCaixa(){
   let data={};try{data=JSON.parse(localStorage.getItem(caixaKey())||'{}')}catch(e){}
-  lista.innerHTML=`<div class="card"><div class="grid"><div><label>MAQUINETA DO SISTEMA</label><input id="maqSistema" type="number" step="0.01" inputmode="decimal" value="${data.maqSistema||''}" oninput="atualizarCaixa()"></div><div><label>MAQUINETA DA LOJA</label><input id="maqLoja" type="number" step="0.01" inputmode="decimal" value="${data.maqLoja||''}" oninput="atualizarCaixa()"></div><div><label>DINHEIRO NO SISTEMA</label><input id="dinSistema" type="number" step="0.01" inputmode="decimal" value="${data.dinSistema||''}" oninput="atualizarCaixa()"></div><div><label>DINHEIRO NO CAIXA</label><input id="dinCaixa" type="number" step="0.01" inputmode="decimal" value="${data.dinCaixa||''}" oninput="atualizarCaixa()"></div></div></div><div class="card" id="resultadoCaixa"><div class="summary">Preencha os 4 campos para ver o resultado.</div></div>`;
+  lista.innerHTML=`<div class="card"><div class="grid"><div><label>MAQUINETA DO SISTEMA</label><input id="maqSistema" type="text" inputmode="numeric" value="${data.maqSistema||''}" oninput="formatarCampoCaixa(this);atualizarCaixa()"></div><div><label>MAQUINETA DA LOJA</label><input id="maqLoja" type="text" inputmode="numeric" value="${data.maqLoja||''}" oninput="formatarCampoCaixa(this);atualizarCaixa()"></div><div><label>DINHEIRO NO SISTEMA</label><input id="dinSistema" type="text" inputmode="numeric" value="${data.dinSistema||''}" oninput="formatarCampoCaixa(this);atualizarCaixa()"></div><div><label>DINHEIRO NO CAIXA</label><input id="dinCaixa" type="text" inputmode="numeric" value="${data.dinCaixa||''}" oninput="formatarCampoCaixa(this);atualizarCaixa()"></div></div></div><div class="card" id="resultadoCaixa"><div class="summary">Preencha os 4 campos para ver o resultado.</div></div>`;
   setStatus('Conferência de caixa do dia '+fmtBR(hojeISO())); atualizarCaixa();
 }
+function formatarCampoCaixa(el){const digits=String(el.value||'').replace(/\D/g,'');if(!digits){el.value='';return}el.value=(Number(digits)/100).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})}
 function valorCampo(id){const el=document.getElementById(id);return el&&el.value!==''?num(el.value):null}
 function textoDiferenca(v,tipo){if(v>0)return `Faltando ${dinheiroBR(v)} ${tipo}`;if(v<0)return `Sobrando ${dinheiroBR(Math.abs(v))} ${tipo}`;return `Fechado ${tipo}`}
 function atualizarCaixa(){
