@@ -167,9 +167,9 @@ function localKey(){return `bils_${moduloAtual||'checklist'}_draft_${hojeISO()}`
 function submittedKey(){return `bils_${moduloAtual||'checklist'}_submitted_${hojeISO()}`}
 function envioKey(mod=moduloAtual){return `bils_${mod}_sent_${hojeISO()}`}
 function horaFortaleza(){return new Intl.DateTimeFormat('pt-BR',{timeZone:'America/Fortaleza',hour:'2-digit',minute:'2-digit'}).format(new Date())}
-function registrarEnvio(mod=moduloAtual,nome=''){localStorage.setItem(envioKey(mod),JSON.stringify({hora:horaFortaleza(),funcionario:String(nome||'').trim()}));atualizarMenuEnvios()}
+function registrarEnvio(mod=moduloAtual,nome=''){const anterior=infoEnvio(mod);localStorage.setItem(envioKey(mod),JSON.stringify({hora:horaFortaleza(),funcionario:String(nome||'').trim(),reenvio:!!anterior}));atualizarMenuEnvios();return !!anterior}
 function infoEnvio(mod){try{return JSON.parse(localStorage.getItem(envioKey(mod))||'null')}catch(e){return null}}
-function textoEnvio(mod){const e=infoEnvio(mod);if(!e)return '';return `Enviado às ${e.hora}${e.funcionario?` pelo funcionário(a) ${e.funcionario}`:''}`}
+function textoEnvio(mod){const e=infoEnvio(mod);if(!e)return '';return `${e.reenvio?'Reenviado':'Enviado'} às ${e.hora}${e.funcionario?` pelo funcionário(a) ${e.funcionario}`:''}`}
 function atualizarMenuEnvios(){document.querySelectorAll('.menuBtn[data-mod]').forEach(btn=>{const mod=btn.dataset.mod;if(mod==='caixa')return;let el=btn.querySelector('.sentInfo');if(!el){el=document.createElement('span');el.className='sentInfo';btn.appendChild(el)}el.textContent=textoEnvio(mod);el.classList.toggle('hidden',!el.textContent)})}
 
 function supaHeaders(extra={}){return {'apikey':SUPABASE_ANON_KEY,'Authorization':'Bearer '+SUPABASE_ANON_KEY,'Content-Type':'application/json',...extra}}
