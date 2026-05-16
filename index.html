@@ -18,7 +18,7 @@
     .need{margin-top:8px;padding:8px;border-radius:10px;background:#13100d;font-weight:900}.ok{color:var(--ok)}.warn{color:var(--acc)}.bad{color:var(--bad)}
     .foot{background:rgba(15,13,11,.96);border-top:1px solid var(--line);padding:12px 14px;display:grid;gap:8px;max-width:820px;margin:0 auto 18px}
     .summary{color:var(--mut);font-size:14px}.admin{margin:12px 0;padding:12px;border:1px solid var(--line);border-radius:16px;background:var(--card)}
-    .menu{display:grid;gap:10px;margin:14px auto;max-width:820px}.menuBtn{padding:18px;text-align:center;border-radius:16px;background:var(--card);border:1px solid var(--line);color:var(--txt);font-size:16px}.menuBtn strong{display:block;font-size:17px}.menuBtn span{display:block;margin-top:4px;color:var(--mut);font-size:13px}.menuBtn.on{border-color:var(--acc);box-shadow:0 0 0 1px rgba(245,166,35,.25)}.hidden{display:none!important}.topActions{display:flex;gap:8px;align-items:center;margin-bottom:10px}.back{width:auto;padding:9px 12px}
+    .menu{display:grid;gap:10px;margin:14px auto;max-width:820px}.menuBtn{padding:18px;text-align:center;border-radius:16px;background:var(--card);border:1px solid var(--line);color:var(--txt);font-size:16px}.menuBtn strong{display:block;font-size:17px}.menuBtn span{display:block;margin-top:4px;color:var(--mut);font-size:13px}.menuBtn .sentInfo{color:#062114;background:var(--ok);border-radius:999px;padding:6px 10px;font-weight:900}.menuBtn.on{border-color:var(--acc);box-shadow:0 0 0 1px rgba(245,166,35,.25)}.popup{position:fixed;left:14px;right:14px;bottom:22px;z-index:9;max-width:520px;margin:0 auto;background:var(--ok);color:#062114;border-radius:16px;padding:14px;text-align:center;font-weight:900;box-shadow:0 12px 30px rgba(0,0,0,.35)}.hidden{display:none!important}.topActions{display:flex;gap:8px;align-items:center;margin-bottom:10px}.back{width:auto;padding:9px 12px}
     input[type=number]::-webkit-outer-spin-button,input[type=number]::-webkit-inner-spin-button{appearance:none;-webkit-appearance:none;margin:0}input[type=number]{appearance:textfield;-moz-appearance:textfield}.catTitle{margin:18px 0 8px;color:var(--acc);font-weight:900}.listHead,.itemRow{display:grid;grid-template-columns:1.5fr .75fr .75fr .75fr 92px;gap:8px;align-items:center}.listHead{color:var(--mut);font-size:12px;padding:0 8px 6px}.itemRow{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:8px;margin-bottom:8px}.itemName{background:none;border:none;color:var(--txt);padding:0;text-align:left;font-weight:900}.ref{grid-column:1/-1;background:#13100d;color:var(--mut);border-radius:10px;padding:8px;font-size:13px}.miniInput{padding:9px}.bring{font-weight:900}.noBtn{padding:9px;font-size:13px;background:var(--card2);color:var(--txt);border:1px solid var(--line)}.noBtn.marked{background:var(--ok);color:#062114}.unit{color:var(--mut);font-size:12px}.bebidaRow{display:grid;grid-template-columns:1.4fr .7fr .7fr;gap:8px;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:8px;margin-bottom:8px}.bebidaName{font-weight:900}.bebidaRef{color:var(--mut);font-size:12px;margin-top:2px}.entradaBox{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:12px;margin:0 0 14px}.entradaTitle{color:var(--acc);font-weight:900;margin:2px 0 10px}.checkRow{display:flex;gap:10px;align-items:flex-start;background:#13100d;border:1px solid var(--line);border-radius:12px;padding:10px;margin-bottom:8px}.checkRow input{width:22px;height:22px;flex:0 0 auto;accent-color:var(--acc)}.checkText{font-weight:800}.checkObs{color:var(--mut);font-size:13px;margin-top:3px;white-space:pre-wrap}.sectionSend{margin-top:10px}@media(max-width:680px){.bebidaRow{grid-template-columns:1fr 1fr}.bebidaName{grid-column:1/-1}}
     @media(max-width:680px){.grid{grid-template-columns:1fr} input,select,textarea,button{font-size:15px}.listHead{display:none}.itemRow{grid-template-columns:1fr 1fr;gap:8px}.itemName{grid-column:1/-1}.bring{font-size:15px}.noBtn{grid-column:2}.ref{grid-column:1/-1}}
   </style>
@@ -59,6 +59,7 @@
   <div class="summary" id="summary">0 itens preenchidos</div>
   <button id="btnEnviar" onclick="enviarChecklist()" disabled>Enviar checklist</button>
 </div>
+<div class="popup hidden" id="popupSucesso">Checklist preenchido com sucesso.</div>
 <script>
 const SUPABASE_URL = 'https://kajfnpkokwmycfmnaiif.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImthamZucGtva3dteWNmbW5haWlmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc0ODc3NzUsImV4cCI6MjA5MzA2Mzc3NX0.ScwxJFcdz3M3gv6oRf097qaqx_UJdZ7l0aVt61KIdCo';
@@ -155,6 +156,7 @@ function diaSemanaBR(iso){const [y,m,d]=iso.split('-').map(Number);const dt=new 
 function num(v){const n=Number(String(v??'').replace(',','.'));return Number.isFinite(n)?n:0}
 function fmtNum(v){const n=Number(v||0);return Number.isInteger(n)?String(n):String(n).replace('.',',')}
 function setStatus(m){const el=document.getElementById('status'); el.textContent=m||''; el.classList.toggle('hidden', !m)}
+function popupChecklist(msg='Checklist preenchido com sucesso.'){const el=document.getElementById('popupSucesso'); if(!el)return; el.textContent=msg; el.classList.remove('hidden'); clearTimeout(window._popupChecklistTimer); window._popupChecklistTimer=setTimeout(()=>el.classList.add('hidden'),3500)}
 function pedirFuncionarioObrigatorio(){
   let nome=(funcionario.value||'').trim();
   while(!nome){
@@ -234,7 +236,7 @@ async function enviarFechamento(){
     {data_checklist,data_alvo,categoria:'FECHAMENTO',produto:'DESLIGAR TOMADA DA FRITADEIRA',minimo_dia:1,quantidade_atual:1,precisa_trazer:0,observacao:'Foto obrigatória capturada',origem,resolvido:true},
     {data_checklist,data_alvo,categoria:'FOTO',produto:'FOTO - DESLIGAR TOMADA DA FRITADEIRA',minimo_dia:0,quantidade_atual:0,precisa_trazer:0,observacao:fechamentoFoto,origem,resolvido:true}
   ];
-  try{setStatus('Enviando checklist de fechamento...'); await supa(`checklist_levar?data_checklist=eq.${data_checklist}&origem=eq.${origem}`,{method:'DELETE',headers:{Prefer:'return=minimal'}}); await supa('checklist_levar',{method:'POST',headers:{Prefer:'return=minimal'},body:JSON.stringify(rows)}); localStorage.setItem(submittedKey(),JSON.stringify({foto:fechamentoFoto})); localStorage.removeItem(fechamentoKey()); registrarEnvio(moduloAtual,''); btnEnviar.textContent='Reenviar checklist'; setStatus('Checklist enviado.')}catch(e){setStatus('Erro ao enviar fechamento:\n'+e.message)}
+  try{setStatus('Enviando checklist de fechamento...'); await supa(`checklist_levar?data_checklist=eq.${data_checklist}&origem=eq.${origem}`,{method:'DELETE',headers:{Prefer:'return=minimal'}}); await supa('checklist_levar',{method:'POST',headers:{Prefer:'return=minimal'},body:JSON.stringify(rows)}); localStorage.setItem(submittedKey(),JSON.stringify({foto:fechamentoFoto})); localStorage.removeItem(fechamentoKey()); registrarEnvio(moduloAtual,''); btnEnviar.textContent='Reenviar checklist'; setStatus('Checklist enviado.'); popupChecklist()}catch(e){setStatus('Erro ao enviar fechamento:\n'+e.message)}
 }
 function carregarFechamentoAtendimento(){lista.innerHTML='<div class="card">Checklist de fechamento atendimento ainda sem itens cadastrados.</div>'; summary.textContent='Sem itens cadastrados'; setStatus('Checklist fechamento atendimento ainda será configurado.');}
 
@@ -268,7 +270,7 @@ async function enviarEntrada(sec=secEntradaAtual()){
   if(faltando.length){alert(`Marque todos os itens de ${titulo}. Faltam ${faltando.length}.`); return}
   const data_checklist=hojeISO(), data_alvo=data_checklist, origem=`checklist_entrada_${sec}`;
   const rows=entrada[sec].filter(entradaAtiva).map(i=>({data_checklist,data_alvo,categoria:`ENTRADA ${titulo.toUpperCase()}`,produto:i.nome,minimo_dia:1,quantidade_atual:1,precisa_trazer:0,observacao:[`Funcionário: ${funcionario}`,entradaObs(i)||''].filter(Boolean).join(' | '),origem,resolvido:true}));
-  try{setStatus(`Enviando checklist entrada ${titulo}...`); await supa(`checklist_levar?data_checklist=eq.${data_checklist}&origem=eq.${origem}`,{method:'DELETE',headers:{Prefer:'return=minimal'}}); await supa('checklist_levar',{method:'POST',headers:{Prefer:'return=minimal'},body:JSON.stringify(rows)}); localStorage.setItem(submittedKey(), JSON.stringify(estadoAtual())); localStorage.removeItem(localKey()); registrarEnvio(moduloAtual,funcionario); btnEnviar.textContent='Reenviar checklist'; setStatus(`Checklist enviado.\nFuncionário: ${funcionario}`)}catch(e){setStatus(`Erro ao enviar entrada ${titulo}:\n`+e.message)}
+  try{setStatus(`Enviando checklist entrada ${titulo}...`); await supa(`checklist_levar?data_checklist=eq.${data_checklist}&origem=eq.${origem}`,{method:'DELETE',headers:{Prefer:'return=minimal'}}); await supa('checklist_levar',{method:'POST',headers:{Prefer:'return=minimal'},body:JSON.stringify(rows)}); localStorage.setItem(submittedKey(), JSON.stringify(estadoAtual())); localStorage.removeItem(localKey()); registrarEnvio(moduloAtual,funcionario); btnEnviar.textContent='Reenviar checklist'; setStatus(`Checklist enviado.\nFuncionário: ${funcionario}`); popupChecklist()}catch(e){setStatus(`Erro ao enviar entrada ${titulo}:\n`+e.message)}
 }
 function carregarItensSexta(usarEnviado=false){
   itens=SEXTA_ITENS_MODELO.map(i=>({...i,quantidade_atual:'',observacao:''}));
@@ -379,7 +381,7 @@ async function enviarChecklistBebidas(){
     await supa(`checklist_levar?data_checklist=eq.${data_checklist}&origem=eq.checklist_bebidas`,{method:'DELETE',headers:{Prefer:'return=minimal'}});
     await supa('checklist_levar',{method:'POST',headers:{Prefer:'return=minimal'},body:JSON.stringify(rows)});
     localStorage.setItem(submittedKey(), JSON.stringify(estadoAtual())); localStorage.removeItem(localKey()); registrarEnvio(moduloAtual,funcionario); btnEnviar.textContent='Reenviar checklist'; setStatus(`Checklist enviado.
-Funcionário: ${funcionario}`); funcionario.value='';
+Funcionário: ${funcionario}`); popupChecklist(); funcionario.value='';
   }catch(e){setStatus('Erro ao enviar checklist de bebidas:\n'+e.message)}
 }
 async function enviarChecklist(){
@@ -401,7 +403,7 @@ async function enviarChecklist(){
     localStorage.setItem(submittedKey(), JSON.stringify(estadoAtual())); localStorage.removeItem(localKey()); registrarEnvio(moduloAtual,funcionario); btnEnviar.textContent='Reenviar checklist'; setStatus(`Checklist enviado.
 Funcionário: ${funcionario}
 Data alvo: ${fmtBR(data_alvo)}
-Itens para levar: ${total}`); funcionario.value=''; if(itemExtra){itemExtra.value=''; atualizarExtraCount();}
+Itens para levar: ${total}`); popupChecklist(); funcionario.value=''; if(itemExtra){itemExtra.value=''; atualizarExtraCount();}
   }catch(e){setStatus('Erro ao enviar checklist:\n'+e.message)}
 }
 funcionario.oninput=salvarLocal; atualizarExtraCount(); atualizarMenuEnvios();
