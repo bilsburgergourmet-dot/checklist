@@ -133,7 +133,7 @@ const ENTRADA_MODELO={
 };
 
 function abrirModulo(modulo){
-  if(!['entrada','itens-diarios','itens-sexta','bebidas','caixa'].includes(modulo)){setStatus('Este módulo ainda será configurado.');return}
+  if(!['entrada','fechamento','itens-diarios','itens-sexta','bebidas','caixa'].includes(modulo)){setStatus('Este módulo ainda será configurado.');return}
   moduloAtual=modulo;
   editandoEnviado=false;
   const enviadoHoje = localStorage.getItem(submittedKey());
@@ -141,10 +141,10 @@ function abrirModulo(modulo){
     editandoEnviado = confirm('DESEJA EDITAR CHECKLIST?');
   }
   menuPrincipal.classList.add('hidden'); appChecklist.classList.remove('hidden'); footerChecklist.classList.toggle('hidden', modulo==='entrada'||modulo==='caixa');
-  moduleTitle.textContent = modulo==='caixa' ? 'CONFERÊNCIA DE CAIXA' : modulo==='bebidas' ? 'CHECKLIST BEBIDAS' : modulo==='entrada' ? 'CHECKLIST ENTRADA' : modulo==='itens-sexta' ? 'CHECKLIST ITENS SEXTA-FEIRA' : 'CHECKLIST ITENS DIÁRIOS';
-  funcionarioBox.classList.toggle('hidden', modulo==='caixa');
-  extraBox.classList.toggle('hidden', modulo==='bebidas'||modulo==='entrada'||modulo==='caixa');
-  if(modulo==='caixa') carregarCaixa(); else if(modulo==='bebidas') carregarBebidas(editandoEnviado); else if(modulo==='entrada') carregarEntrada(editandoEnviado); else if(modulo==='itens-sexta') carregarItensSexta(editandoEnviado); else carregarItens(editandoEnviado);
+  moduleTitle.textContent = modulo==='caixa' ? 'CONFERÊNCIA DE CAIXA' : modulo==='fechamento' ? 'CHECKLIST FECHAMENTO' : modulo==='bebidas' ? 'CHECKLIST BEBIDAS' : modulo==='entrada' ? 'CHECKLIST ENTRADA' : modulo==='itens-sexta' ? 'CHECKLIST ITENS SEXTA-FEIRA' : 'CHECKLIST ITENS DIÁRIOS';
+  funcionarioBox.classList.toggle('hidden', modulo==='caixa'||modulo==='fechamento');
+  extraBox.classList.toggle('hidden', modulo==='bebidas'||modulo==='entrada'||modulo==='caixa'||modulo==='fechamento');
+  if(modulo==='caixa') carregarCaixa(); else if(modulo==='fechamento') carregarFechamento(); else if(modulo==='bebidas') carregarBebidas(editandoEnviado); else if(modulo==='entrada') carregarEntrada(editandoEnviado); else if(modulo==='itens-sexta') carregarItensSexta(editandoEnviado); else carregarItens(editandoEnviado);
 }
 function voltarMenu(){moduloAtual=null; appChecklist.classList.add('hidden'); footerChecklist.classList.add('hidden'); menuPrincipal.classList.remove('hidden'); setStatus('')}
 
@@ -195,6 +195,41 @@ function atualizarCaixa(){
   box.innerHTML=`<div class="need ${final===0?'ok':final>0?'bad':'warn'}">${textoDiferenca(difMaq,'nas maquinetas')}.<br>${textoDiferenca(difDin,'em espécie')}.<br><br>Resultado final: ${finalTxt}</div>`;
 }
 
+
+let fechamentoFoto='';
+let fechamentoStream=null;
+function fechamentoKey(){return `bils_fechamento_${hojeISO()}`}
+function salvarFechamentoLocal(){localStorage.setItem(fechamentoKey(),JSON.stringify({foto:fechamentoFoto}))}
+function carregarFechamento(){
+  try{const data=JSON.parse(localStorage.getItem(fechamentoKey())||'{}');fechamentoFoto=data.foto||''}catch(e){fechamentoFoto=''}
+  lista.innerHTML=`<div class="card"><div class="prod">DESLIGAR TOMADA DA FRITADEIRA</div><div class="unit" style="margin-top:4px">Obrigatório tirar foto pela câmera do celular.</div><video id="camFechamento" class="${fechamentoFoto?'hidden':''}" autoplay playsinline style="width:100%;margin-top:10px;border-radius:12px;background:#000"></video><canvas id="canvasFechamento" class="hidden"></canvas><img id="previewFechamento" class="${fechamentoFoto?'':'hidden'}" src="${fechamentoFoto}" style="width:100%;margin-top:10px;border-radius:12px"><div class="grid" style="margin-top:10px"><button onclick="iniciarCameraFechamento()">Abrir câmera</button><button onclick="capturarFechamento()">Capturar foto</button></div><button class="secondary" style="margin-top:8px" onclick="limparFotoFechamento()">Tirar outra foto</button></div>`;
+  summary.textContent=fechamentoFoto?'Foto capturada':'Foto obrigatória pendente'; if(typeof btnEnviar!=='undefined')btnEnviar.disabled=false; setStatus('Checklist de fechamento: tire a foto obrigatória da fritadeira fora da tomada.');
+}
+async function iniciarCameraFechamento(){
+  try{
+    if(fechamentoStream)fechamentoStream.getTracks().forEach(t=>t.stop());
+    fechamentoStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'}},audio:false});
+    camFechamento.srcObject=fechamentoStream; camFechamento.classList.remove('hidden'); previewFechamento.classList.add('hidden');
+  }catch(e){setStatus('Não consegui abrir a câmera. Verifique a permissão do navegador.')}
+}
+function capturarFechamento(){
+  const v=document.getElementById('camFechamento'), c=document.getElementById('canvasFechamento');
+  if(!v||!v.srcObject){setStatus('Abra a câmera antes de capturar a foto.');return}
+  c.width=v.videoWidth||1280; c.height=v.videoHeight||720; c.getContext('2d').drawImage(v,0,0,c.width,c.height);
+  fechamentoFoto=c.toDataURL('image/jpeg',0.72); previewFechamento.src=fechamentoFoto; previewFechamento.classList.remove('hidden'); v.classList.add('hidden');
+  if(fechamentoStream){fechamentoStream.getTracks().forEach(t=>t.stop()); fechamentoStream=null}
+  salvarFechamentoLocal(); summary.textContent='Foto capturada'; setStatus('Foto capturada. Pode enviar o checklist de fechamento.');
+}
+function limparFotoFechamento(){fechamentoFoto='';salvarFechamentoLocal();carregarFechamento()}
+async function enviarFechamento(){
+  if(!fechamentoFoto){setStatus('Tire a foto obrigatória antes de enviar.');return}
+  const data_checklist=hojeISO(), data_alvo=data_checklist, origem='checklist_fechamento';
+  const rows=[
+    {data_checklist,data_alvo,categoria:'FECHAMENTO',produto:'DESLIGAR TOMADA DA FRITADEIRA',minimo_dia:1,quantidade_atual:1,precisa_trazer:0,observacao:'Foto obrigatória capturada',origem,resolvido:true},
+    {data_checklist,data_alvo,categoria:'FOTO',produto:'FOTO - DESLIGAR TOMADA DA FRITADEIRA',minimo_dia:0,quantidade_atual:0,precisa_trazer:0,observacao:fechamentoFoto,origem,resolvido:true}
+  ];
+  try{setStatus('Enviando checklist de fechamento...'); await supa(`checklist_levar?data_checklist=eq.${data_checklist}&origem=eq.${origem}`,{method:'DELETE',headers:{Prefer:'return=minimal'}}); await supa('checklist_levar',{method:'POST',headers:{Prefer:'return=minimal'},body:JSON.stringify(rows)}); localStorage.removeItem(fechamentoKey()); fechamentoFoto=''; setStatus('Checklist de fechamento enviado com sucesso!')}catch(e){setStatus('Erro ao enviar fechamento:\n'+e.message)}
+}
 
 function diaPerfilHoje(){const [y,m,d]=hojeISO().split('-').map(Number);const wd=new Date(Date.UTC(y,m-1,d)).getUTCDay();if(wd===5)return 'sexta';if(wd===0||wd===6)return 'sab_dom';return 'seg_qui'}
 function entradaAtiva(item){const perfil=diaPerfilHoje(); if(item.regra==='seg_qui')return perfil==='seg_qui'; if(item.regra==='sex_dom')return perfil==='sexta'||perfil==='sab_dom'; return true}
@@ -343,6 +378,7 @@ async function enviarChecklistBebidas(){
   }catch(e){setStatus('Erro ao enviar checklist de bebidas:\n'+e.message)}
 }
 async function enviarChecklist(){
+  if(moduloAtual==='fechamento') return enviarFechamento();
   if(moduloAtual==='bebidas') return enviarChecklistBebidas();
   const funcionario=pedirFuncionarioObrigatorio();
   const faltando=itensIncompletos(); if(faltando.length){alert(`Preencha todos os itens ou marque Não precisa. Faltam ${faltando.length}.`); setStatus(`Checklist incompleto. Faltam ${faltando.length} itens.`); return}
