@@ -184,6 +184,12 @@ function registrarEnvio(mod=moduloAtual,nome=''){const anterior=infoEnvio(mod)||
 function infoEnvio(mod){return infoEnvioBanco(mod)||(()=>{try{return JSON.parse(localStorage.getItem(envioKey(mod))||'null')}catch(e){return null}})()}
 function textoEnvio(mod){const e=infoEnvio(mod);if(!e)return '';return `${e.reenvio?'Reenviado':'Enviado'} às ${e.hora}${e.funcionario?` pelo funcionário(a) ${e.funcionario}`:''}`}
 function pintarMenuEnvios(){document.querySelectorAll('.menuBtn[data-mod]').forEach(btn=>{const mod=btn.dataset.mod;if(mod==='caixa')return;let el=btn.querySelector('.sentInfo');if(!el){el=document.createElement('span');el.className='sentInfo';btn.appendChild(el)}el.textContent=textoEnvio(mod);el.classList.toggle('hidden',!el.textContent);btn.classList.toggle('sent',!!el.textContent)})}
+async function checklistJaEnviado(origem){const rows=await supa(`checklist_levar?select=id&data_checklist=eq.${hojeISO()}&origem=eq.${origem}&limit=1`);return !!(rows&&rows.length)}
+async function confirmarReenvio(origem,nome='checklist'){
+  const existe=await checklistJaEnviado(origem);
+  if(!existe)return true;
+  return confirm(`${nome} já foi enviado hoje.\n\nReenviar vai substituir o checklist anterior no banco. Deseja continuar?`);
+}
 async function atualizarMenuEnvios(){
   pintarMenuEnvios();
   try{
@@ -262,7 +268,7 @@ async function enviarFechamento(){
     {data_checklist,data_alvo,categoria:'FECHAMENTO',produto:'DESLIGAR TOMADA DA FRITADEIRA',minimo_dia:1,quantidade_atual:1,precisa_trazer:0,observacao:'Foto obrigatória capturada',origem,resolvido:true},
     {data_checklist,data_alvo,categoria:'FOTO',produto:'FOTO - DESLIGAR TOMADA DA FRITADEIRA',minimo_dia:0,quantidade_atual:0,precisa_trazer:0,observacao:fechamentoFoto,origem,resolvido:true}
   ];
-  try{setStatus('Enviando checklist de fechamento...'); await supa(`checklist_levar?data_checklist=eq.${data_checklist}&origem=eq.${origem}`,{method:'DELETE',headers:{Prefer:'return=minimal'}}); await supa('checklist_levar',{method:'POST',headers:{Prefer:'return=minimal'},body:JSON.stringify(rows)}); localStorage.setItem(submittedKey(),JSON.stringify({foto:fechamentoFoto})); localStorage.removeItem(fechamentoKey()); registrarEnvio(moduloAtual,''); btnEnviar.textContent='Reenviar checklist'; setStatus('Checklist enviado.'); popupChecklist()}catch(e){setStatus('Erro ao enviar fechamento:\n'+e.message)}
+  try{if(!(await confirmarReenvio(origem,'Checklist de fechamento cozinha')))return; setStatus('Enviando checklist de fechamento...'); await supa(`checklist_levar?data_checklist=eq.${data_checklist}&origem=eq.${origem}`,{method:'DELETE',headers:{Prefer:'return=minimal'}}); await supa('checklist_levar',{method:'POST',headers:{Prefer:'return=minimal'},body:JSON.stringify(rows)}); localStorage.setItem(submittedKey(),JSON.stringify({foto:fechamentoFoto})); localStorage.removeItem(fechamentoKey()); registrarEnvio(moduloAtual,''); btnEnviar.textContent='Reenviar checklist'; setStatus('Checklist enviado.'); popupChecklist()}catch(e){setStatus('Erro ao enviar fechamento:\n'+e.message)}
 }
 function carregarFechamentoAtendimento(){lista.innerHTML='<div class="card">Checklist de fechamento atendimento ainda sem itens cadastrados.</div>'; summary.textContent='Sem itens cadastrados'; setStatus('Checklist fechamento atendimento ainda será configurado.');}
 
@@ -296,7 +302,7 @@ async function enviarEntrada(sec=secEntradaAtual()){
   if(faltando.length){alert(`Marque todos os itens de ${titulo}. Faltam ${faltando.length}.`); return}
   const data_checklist=hojeISO(), data_alvo=data_checklist, origem=`checklist_entrada_${sec}`;
   const rows=entrada[sec].filter(entradaAtiva).map(i=>({data_checklist,data_alvo,categoria:`ENTRADA ${titulo.toUpperCase()}`,produto:i.nome,minimo_dia:1,quantidade_atual:1,precisa_trazer:0,observacao:[`Funcionário: ${funcionario}`,entradaObs(i)||''].filter(Boolean).join(' | '),origem,resolvido:true}));
-  try{setStatus(`Enviando checklist entrada ${titulo}...`); await supa(`checklist_levar?data_checklist=eq.${data_checklist}&origem=eq.${origem}`,{method:'DELETE',headers:{Prefer:'return=minimal'}}); await supa('checklist_levar',{method:'POST',headers:{Prefer:'return=minimal'},body:JSON.stringify(rows)}); localStorage.setItem(submittedKey(), JSON.stringify(estadoAtual())); localStorage.removeItem(localKey()); registrarEnvio(moduloAtual,funcionario); btnEnviar.textContent='Reenviar checklist'; setStatus(`Checklist enviado.\nFuncionário: ${funcionario}`); popupChecklist()}catch(e){setStatus(`Erro ao enviar entrada ${titulo}:\n`+e.message)}
+  try{if(!(await confirmarReenvio(origem,`Checklist entrada ${titulo}`)))return; setStatus(`Enviando checklist entrada ${titulo}...`); await supa(`checklist_levar?data_checklist=eq.${data_checklist}&origem=eq.${origem}`,{method:'DELETE',headers:{Prefer:'return=minimal'}}); await supa('checklist_levar',{method:'POST',headers:{Prefer:'return=minimal'},body:JSON.stringify(rows)}); localStorage.setItem(submittedKey(), JSON.stringify(estadoAtual())); localStorage.removeItem(localKey()); registrarEnvio(moduloAtual,funcionario); btnEnviar.textContent='Reenviar checklist'; setStatus(`Checklist enviado.\nFuncionário: ${funcionario}`); popupChecklist()}catch(e){setStatus(`Erro ao enviar entrada ${titulo}:\n`+e.message)}
 }
 function carregarItensSexta(usarEnviado=false){
   itens=SEXTA_ITENS_MODELO.map(i=>({...i,quantidade_atual:'',observacao:''}));
@@ -397,17 +403,30 @@ function atualizarLinha(id){
 function itensIncompletos(){return itens.filter(i=>!i.nao_precisa&&(i.quantidade_atual===''||i.quantidade_atual==null))}
 function atualizarResumo(){const p=itens.filter(i=>i.nao_precisa||(i.quantidade_atual!==''&&i.quantidade_atual!=null)).length;const f=itens.filter(i=>!i.nao_precisa&&i.quantidade_atual!==''&&Math.max(0,num(i.minimo_dia)-num(i.quantidade_atual))>0).length;summary.textContent=`${p}/${itens.length} itens preenchidos | ${f} para levar`; if(typeof btnEnviar!=='undefined')btnEnviar.disabled=p!==itens.length}
 function atualizarExtraCount(){if(extraCount&&itemExtra)extraCount.textContent=`${itemExtra.value.length}/100 caracteres`}
+function resumoLevarItens(){
+  const levar=itens.filter(i=>!i.nao_precisa&&i.quantidade_atual!==''&&i.quantidade_atual!=null&&Math.max(0,num(i.minimo_dia)-num(i.quantidade_atual))>0);
+  const extra=(itemExtra?.value||'').trim().slice(0,100);
+  const linhas=levar.map(i=>`- ${i.produto}: ${fmtNum(Math.max(0,num(i.minimo_dia)-num(i.quantidade_atual)))}${i.unidade?' '+i.unidade:''}`);
+  if(extra)linhas.push(`- Item a mais: ${extra}`);
+  return linhas.length?`Itens para levar:\n${linhas.join('\n')}`:'Itens para levar:\nNenhum item para levar.';
+}
+function resumoLevarBebidas(rows){
+  const levar=(rows||[]).filter(r=>Number(r.precisa_trazer)>0).map(r=>`- ${r.produto}: ${fmtNum(r.precisa_trazer)} unid`);
+  return levar.length?`Bebidas para levar:\n${levar.join('\n')}`:'Bebidas para levar:\nNenhuma bebida para levar.';
+}
 async function enviarChecklistBebidas(){
   const funcionario=pedirFuncionarioObrigatorio();
   const faltando=bebidasIncompletas(); if(faltando.length){alert(`Preencha fardos ou unidades de todas as bebidas. Se não tiver, digite 0. Faltam ${faltando.length}.`); setStatus(`Checklist incompleto. Faltam ${faltando.length} bebidas.`); return}
   const data_checklist=hojeISO(), data_alvo=data_checklist;
   const rows=bebidas.map(b=>{const f=b.fardos===''||b.fardos==null?'0':b.fardos; const u=b.unidades===''||b.unidades==null?'0':b.unidades; const atual=num(f)*b.porFardo+num(u); const minimo=num(BEBIDAS_NECESSARIO[b.produto]||0); const precisa=Math.max(0,minimo-atual); return {data_checklist,data_alvo,categoria:'BEBIDAS',produto:b.produto,minimo_dia:minimo,quantidade_atual:atual,precisa_trazer:precisa,observacao:`Funcionário: ${funcionario} | Fardos: ${f} | Unidades: ${u} | fd c/ ${b.porFardo}`,origem:'checklist_bebidas',resolvido:precisa<=0}});
   try{
+    if(!(await confirmarReenvio('checklist_bebidas','Checklist de bebidas')))return;
     setStatus('Enviando checklist de bebidas...');
     await supa(`checklist_levar?data_checklist=eq.${data_checklist}&origem=eq.checklist_bebidas`,{method:'DELETE',headers:{Prefer:'return=minimal'}});
     await supa('checklist_levar',{method:'POST',headers:{Prefer:'return=minimal'},body:JSON.stringify(rows)});
     localStorage.setItem(submittedKey(), JSON.stringify(estadoAtual())); localStorage.removeItem(localKey()); registrarEnvio(moduloAtual,funcionario); btnEnviar.textContent='Reenviar checklist'; setStatus(`Checklist enviado.
-Funcionário: ${funcionario}`); popupChecklist(); funcionario.value='';
+Funcionário: ${funcionario}
+${resumoLevarBebidas(rows)}`); popupChecklist(); funcionario.value='';
   }catch(e){setStatus('Erro ao enviar checklist de bebidas:\n'+e.message)}
 }
 async function enviarChecklist(){
@@ -422,6 +441,8 @@ async function enviarChecklist(){
   const extra=(itemExtra?.value||'').trim().slice(0,100);
   if(extra) rows.push({data_checklist,data_alvo,categoria:'EXTRA',produto:'ITEM A MAIS',minimo_dia:0,quantidade_atual:0,precisa_trazer:0,observacao:`Funcionário: ${funcionario} | Item a mais: ${extra}`,origem:origemChecklist,resolvido:false});
   try{
+    if(!(await confirmarReenvio(origemChecklist,moduleTitle.textContent||'Checklist')))return;
+    const resumoLevar=resumoLevarItens();
     setStatus('Enviando checklist para o Supabase...');
     await supa(`checklist_levar?data_checklist=eq.${data_checklist}&origem=eq.${origemChecklist}`,{method:'DELETE',headers:{Prefer:'return=minimal'}});
     await supa('checklist_levar',{method:'POST',headers:{Prefer:'return=minimal'},body:JSON.stringify(rows)});
@@ -429,7 +450,8 @@ async function enviarChecklist(){
     localStorage.setItem(submittedKey(), JSON.stringify(estadoAtual())); localStorage.removeItem(localKey()); registrarEnvio(moduloAtual,funcionario); btnEnviar.textContent='Reenviar checklist'; setStatus(`Checklist enviado.
 Funcionário: ${funcionario}
 Data alvo: ${fmtBR(data_alvo)}
-Itens para levar: ${total}`); popupChecklist(); funcionario.value=''; if(itemExtra){itemExtra.value=''; atualizarExtraCount();}
+Total para levar: ${total}
+${resumoLevar}`); popupChecklist(); funcionario.value=''; if(itemExtra){itemExtra.value=''; atualizarExtraCount();}
   }catch(e){setStatus('Erro ao enviar checklist:\n'+e.message)}
 }
 funcionario.oninput=salvarLocal; atualizarExtraCount(); atualizarMenuEnvios();
