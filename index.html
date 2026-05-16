@@ -307,8 +307,8 @@ async function enviarEntrada(sec=secEntradaAtual()){
 }
 function carregarItensSexta(usarEnviado=false){
   itens=SEXTA_ITENS_MODELO.map(i=>({...i,quantidade_atual:'',observacao:''}));
-  carregarLocal(usarEnviado); renderSexta();
-  setStatus(`Checklist de itens da sexta-feira feito em ${fmtBR(hojeISO())}.`);
+  carregarLocal(usarEnviado); render();
+  setStatus(`Checklist de itens da sexta-feira feito em ${fmtBR(hojeISO())}.\nInforme quanto tem na loja; o relatório envia só a diferença para levar.`);
 }
 async function carregarItens(usarEnviado=false){
   try{
