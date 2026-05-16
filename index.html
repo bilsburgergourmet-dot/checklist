@@ -30,13 +30,15 @@
 <main>
   <div class="status hidden" id="status"></div>
   <section id="menuPrincipal" class="menu">
-    <button class="menuBtn" onclick="abrirModulo('entrada')"><strong>CHECKLIST ENTRADA</strong><span>Cozinha e atendimento</span></button>
-    <button class="menuBtn" onclick="abrirModulo('fechamento')"><strong>CHECKLIST FECHAMENTO</strong><span>Em breve</span></button>
-    <button class="menuBtn" onclick="abrirModulo('itens-diarios')"><strong>CHECKLIST ITENS DIÁRIOS</strong><span>Conferência de itens para o dia seguinte</span></button>
-    <button class="menuBtn" onclick="abrirModulo('itens-sexta')"><strong>CHECKLIST ITENS SEXTA-FEIRA</strong><span>Conferência fixa da sexta-feira</span></button>
-    <button class="menuBtn" onclick="abrirModulo('bebidas')"><strong>CHECKLIST BEBIDAS</strong><span>Contagem de fardos e unidades</span></button>
+    <button class="menuBtn" data-mod="entrada-cozinha" onclick="abrirModulo('entrada-cozinha')"><strong>🍳 CHECKLIST ENTRADA COZINHA</strong><span>Cozinha</span></button>
+    <button class="menuBtn" data-mod="entrada-atendimento" onclick="abrirModulo('entrada-atendimento')"><strong>🛎️ CHECKLIST ENTRADA ATENDIMENTO</strong><span>Atendimento</span></button>
+    <button class="menuBtn" data-mod="fechamento-cozinha" onclick="abrirModulo('fechamento-cozinha')"><strong>🍟 CHECKLIST FECHAMENTO COZINHA</strong><span>Foto obrigatória da fritadeira</span></button>
+    <button class="menuBtn" data-mod="fechamento-atendimento" onclick="abrirModulo('fechamento-atendimento')"><strong>🧾 CHECKLIST FECHAMENTO ATENDIMENTO</strong><span>Em breve</span></button>
+    <button class="menuBtn" data-mod="itens-diarios" onclick="abrirModulo('itens-diarios')"><strong>CHECKLIST ITENS DIÁRIOS</strong><span>Conferência de itens para o dia seguinte</span></button>
+    <button class="menuBtn" data-mod="itens-sexta" onclick="abrirModulo('itens-sexta')"><strong>CHECKLIST ITENS SEXTA-FEIRA</strong><span>Conferência fixa da sexta-feira</span></button>
+    <button class="menuBtn" data-mod="bebidas" onclick="abrirModulo('bebidas')"><strong>CHECKLIST BEBIDAS</strong><span>Contagem de fardos e unidades</span></button>
     <button class="menuBtn" onclick="abrirModulo('estoque')"><strong>CONTAGEM DE ESTOQUE</strong><span>Em breve</span></button>
-    <button class="menuBtn" onclick="abrirModulo('caixa')"><strong>CONFERÊNCIA DE CAIXA</strong><span>Maquineta e dinheiro</span></button>
+    <button class="menuBtn" data-mod="caixa" onclick="abrirModulo('caixa')"><strong>CONFERÊNCIA DE CAIXA</strong><span>Maquineta e dinheiro</span></button>
   </section>
 
   <section id="appChecklist" class="hidden">
@@ -133,20 +135,17 @@ const ENTRADA_MODELO={
 };
 
 function abrirModulo(modulo){
-  if(!['entrada','fechamento','itens-diarios','itens-sexta','bebidas','caixa'].includes(modulo)){setStatus('Este módulo ainda será configurado.');return}
+  if(!['entrada-cozinha','entrada-atendimento','fechamento-cozinha','fechamento-atendimento','itens-diarios','itens-sexta','bebidas','caixa'].includes(modulo)){setStatus('Este módulo ainda será configurado.');return}
   moduloAtual=modulo;
-  editandoEnviado=false;
-  const enviadoHoje = localStorage.getItem(submittedKey());
-  if(enviadoHoje){
-    editandoEnviado = confirm('DESEJA EDITAR CHECKLIST?');
-  }
-  menuPrincipal.classList.add('hidden'); appChecklist.classList.remove('hidden'); footerChecklist.classList.toggle('hidden', modulo==='entrada'||modulo==='caixa');
-  moduleTitle.textContent = modulo==='caixa' ? 'CONFERÊNCIA DE CAIXA' : modulo==='fechamento' ? 'CHECKLIST FECHAMENTO' : modulo==='bebidas' ? 'CHECKLIST BEBIDAS' : modulo==='entrada' ? 'CHECKLIST ENTRADA' : modulo==='itens-sexta' ? 'CHECKLIST ITENS SEXTA-FEIRA' : 'CHECKLIST ITENS DIÁRIOS';
-  funcionarioBox.classList.toggle('hidden', modulo==='caixa'||modulo==='fechamento');
-  extraBox.classList.toggle('hidden', modulo==='bebidas'||modulo==='entrada'||modulo==='caixa'||modulo==='fechamento');
-  if(modulo==='caixa') carregarCaixa(); else if(modulo==='fechamento') carregarFechamento(); else if(modulo==='bebidas') carregarBebidas(editandoEnviado); else if(modulo==='entrada') carregarEntrada(editandoEnviado); else if(modulo==='itens-sexta') carregarItensSexta(editandoEnviado); else carregarItens(editandoEnviado);
+  editandoEnviado=Boolean(localStorage.getItem(submittedKey()));
+  menuPrincipal.classList.add('hidden'); appChecklist.classList.remove('hidden'); footerChecklist.classList.toggle('hidden', modulo==='caixa'||modulo==='fechamento-atendimento');
+  moduleTitle.textContent = modulo==='caixa' ? 'CONFERÊNCIA DE CAIXA' : modulo==='fechamento-cozinha' ? 'CHECKLIST FECHAMENTO COZINHA' : modulo==='fechamento-atendimento' ? 'CHECKLIST FECHAMENTO ATENDIMENTO' : modulo==='bebidas' ? 'CHECKLIST BEBIDAS' : modulo==='entrada-cozinha' ? 'CHECKLIST ENTRADA COZINHA' : modulo==='entrada-atendimento' ? 'CHECKLIST ENTRADA ATENDIMENTO' : modulo==='itens-sexta' ? 'CHECKLIST ITENS SEXTA-FEIRA' : 'CHECKLIST ITENS DIÁRIOS';
+  funcionarioBox.classList.toggle('hidden', modulo==='caixa'||modulo.startsWith('fechamento'));
+  extraBox.classList.toggle('hidden', modulo==='bebidas'||modulo.startsWith('entrada')||modulo==='caixa'||modulo.startsWith('fechamento'));
+  btnEnviar.textContent=editandoEnviado?'Reenviar checklist':'Enviar checklist';
+  if(modulo==='caixa') carregarCaixa(); else if(modulo==='fechamento-cozinha') carregarFechamentoCozinha(editandoEnviado); else if(modulo==='fechamento-atendimento') carregarFechamentoAtendimento(); else if(modulo==='bebidas') carregarBebidas(editandoEnviado); else if(modulo.startsWith('entrada')) carregarEntrada(editandoEnviado); else if(modulo==='itens-sexta') carregarItensSexta(editandoEnviado); else carregarItens(editandoEnviado);
 }
-function voltarMenu(){moduloAtual=null; appChecklist.classList.add('hidden'); footerChecklist.classList.add('hidden'); menuPrincipal.classList.remove('hidden'); setStatus('')}
+function voltarMenu(){moduloAtual=null; appChecklist.classList.add('hidden'); footerChecklist.classList.add('hidden'); menuPrincipal.classList.remove('hidden'); setStatus(''); atualizarMenuEnvios()}
 
 function hojeISO(){return fortalezaISO()}
 function fortalezaISO(){const parts=new Intl.DateTimeFormat('en-CA',{timeZone:'America/Fortaleza',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date());const m=Object.fromEntries(parts.map(p=>[p.type,p.value]));return `${m.year}-${m.month}-${m.day}`}
@@ -166,6 +165,13 @@ function pedirFuncionarioObrigatorio(){
 }
 function localKey(){return `bils_${moduloAtual||'checklist'}_draft_${hojeISO()}`}
 function submittedKey(){return `bils_${moduloAtual||'checklist'}_submitted_${hojeISO()}`}
+function envioKey(mod=moduloAtual){return `bils_${mod}_sent_${hojeISO()}`}
+function horaFortaleza(){return new Intl.DateTimeFormat('pt-BR',{timeZone:'America/Fortaleza',hour:'2-digit',minute:'2-digit'}).format(new Date())}
+function registrarEnvio(mod=moduloAtual,nome=''){localStorage.setItem(envioKey(mod),JSON.stringify({hora:horaFortaleza(),funcionario:String(nome||'').trim()}));atualizarMenuEnvios()}
+function infoEnvio(mod){try{return JSON.parse(localStorage.getItem(envioKey(mod))||'null')}catch(e){return null}}
+function textoEnvio(mod){const e=infoEnvio(mod);if(!e)return '';return `Enviado às ${e.hora}${e.funcionario?` pelo funcionário(a) ${e.funcionario}`:''}`}
+function atualizarMenuEnvios(){document.querySelectorAll('.menuBtn[data-mod]').forEach(btn=>{const mod=btn.dataset.mod;if(mod==='caixa')return;let el=btn.querySelector('.sentInfo');if(!el){el=document.createElement('span');el.className='sentInfo';btn.appendChild(el)}el.textContent=textoEnvio(mod);el.classList.toggle('hidden',!el.textContent)})}
+
 function supaHeaders(extra={}){return {'apikey':SUPABASE_ANON_KEY,'Authorization':'Bearer '+SUPABASE_ANON_KEY,'Content-Type':'application/json',...extra}}
 async function supa(path,opt={}){const r=await fetch(`${SUPABASE_URL}/rest/v1/${path}`,{...opt,headers:supaHeaders(opt.headers||{})});const txt=await r.text();if(!r.ok)throw new Error(txt||r.statusText);return txt?JSON.parse(txt):null}
 function perfilMinimo(dataAlvo){const [y,m,d]=dataAlvo.split('-').map(Number);const wd=new Date(Date.UTC(y,m-1,d)).getUTCDay();if(wd===5)return 'sexta';if(wd===0||wd===6)return 'sab_dom';return 'seg_qui'}
@@ -200,10 +206,10 @@ let fechamentoFoto='';
 let fechamentoStream=null;
 function fechamentoKey(){return `bils_fechamento_${hojeISO()}`}
 function salvarFechamentoLocal(){localStorage.setItem(fechamentoKey(),JSON.stringify({foto:fechamentoFoto}))}
-function carregarFechamento(){
-  try{const data=JSON.parse(localStorage.getItem(fechamentoKey())||'{}');fechamentoFoto=data.foto||''}catch(e){fechamentoFoto=''}
+function carregarFechamentoCozinha(usarEnviado=false){
+  try{const data=JSON.parse(localStorage.getItem(usarEnviado?submittedKey():fechamentoKey())||'{}');fechamentoFoto=data.foto||''}catch(e){fechamentoFoto=''}
   lista.innerHTML=`<div class="card"><div class="prod">DESLIGAR TOMADA DA FRITADEIRA</div><div class="unit" style="margin-top:4px">Obrigatório tirar foto pela câmera do celular.</div><video id="camFechamento" class="${fechamentoFoto?'hidden':''}" autoplay playsinline style="width:100%;margin-top:10px;border-radius:12px;background:#000"></video><canvas id="canvasFechamento" class="hidden"></canvas><img id="previewFechamento" class="${fechamentoFoto?'':'hidden'}" src="${fechamentoFoto}" style="width:100%;margin-top:10px;border-radius:12px"><div class="grid" style="margin-top:10px"><button onclick="iniciarCameraFechamento()">Abrir câmera</button><button onclick="capturarFechamento()">Capturar foto</button></div><button class="secondary" style="margin-top:8px" onclick="limparFotoFechamento()">Tirar outra foto</button></div>`;
-  summary.textContent=fechamentoFoto?'Foto capturada':'Foto obrigatória pendente'; if(typeof btnEnviar!=='undefined')btnEnviar.disabled=false; setStatus('Checklist de fechamento: tire a foto obrigatória da fritadeira fora da tomada.');
+  summary.textContent=fechamentoFoto?'Foto capturada':'Foto obrigatória pendente'; if(typeof btnEnviar!=='undefined'){btnEnviar.disabled=false;btnEnviar.textContent=localStorage.getItem(submittedKey())?'Reenviar checklist':'Enviar checklist'} setStatus(usarEnviado?'Checklist enviado. Foto carregada para reenvio.':'Checklist de fechamento: tire a foto obrigatória da fritadeira fora da tomada.');
 }
 async function iniciarCameraFechamento(){
   try{
@@ -220,16 +226,17 @@ function capturarFechamento(){
   if(fechamentoStream){fechamentoStream.getTracks().forEach(t=>t.stop()); fechamentoStream=null}
   salvarFechamentoLocal(); summary.textContent='Foto capturada'; setStatus('Foto capturada. Pode enviar o checklist de fechamento.');
 }
-function limparFotoFechamento(){fechamentoFoto='';salvarFechamentoLocal();carregarFechamento()}
+function limparFotoFechamento(){fechamentoFoto='';salvarFechamentoLocal();carregarFechamentoCozinha()}
 async function enviarFechamento(){
   if(!fechamentoFoto){setStatus('Tire a foto obrigatória antes de enviar.');return}
-  const data_checklist=hojeISO(), data_alvo=data_checklist, origem='checklist_fechamento';
+  const data_checklist=hojeISO(), data_alvo=data_checklist, origem='checklist_fechamento_cozinha';
   const rows=[
     {data_checklist,data_alvo,categoria:'FECHAMENTO',produto:'DESLIGAR TOMADA DA FRITADEIRA',minimo_dia:1,quantidade_atual:1,precisa_trazer:0,observacao:'Foto obrigatória capturada',origem,resolvido:true},
     {data_checklist,data_alvo,categoria:'FOTO',produto:'FOTO - DESLIGAR TOMADA DA FRITADEIRA',minimo_dia:0,quantidade_atual:0,precisa_trazer:0,observacao:fechamentoFoto,origem,resolvido:true}
   ];
-  try{setStatus('Enviando checklist de fechamento...'); await supa(`checklist_levar?data_checklist=eq.${data_checklist}&origem=eq.${origem}`,{method:'DELETE',headers:{Prefer:'return=minimal'}}); await supa('checklist_levar',{method:'POST',headers:{Prefer:'return=minimal'},body:JSON.stringify(rows)}); localStorage.removeItem(fechamentoKey()); fechamentoFoto=''; setStatus('Checklist de fechamento enviado com sucesso!')}catch(e){setStatus('Erro ao enviar fechamento:\n'+e.message)}
+  try{setStatus('Enviando checklist de fechamento...'); await supa(`checklist_levar?data_checklist=eq.${data_checklist}&origem=eq.${origem}`,{method:'DELETE',headers:{Prefer:'return=minimal'}}); await supa('checklist_levar',{method:'POST',headers:{Prefer:'return=minimal'},body:JSON.stringify(rows)}); localStorage.setItem(submittedKey(),JSON.stringify({foto:fechamentoFoto})); localStorage.removeItem(fechamentoKey()); registrarEnvio(moduloAtual,''); btnEnviar.textContent='Reenviar checklist'; setStatus('Checklist enviado.')}catch(e){setStatus('Erro ao enviar fechamento:\n'+e.message)}
 }
+function carregarFechamentoAtendimento(){lista.innerHTML='<div class="card">Checklist de fechamento atendimento ainda sem itens cadastrados.</div>'; summary.textContent='Sem itens cadastrados'; setStatus('Checklist fechamento atendimento ainda será configurado.');}
 
 function diaPerfilHoje(){const [y,m,d]=hojeISO().split('-').map(Number);const wd=new Date(Date.UTC(y,m-1,d)).getUTCDay();if(wd===5)return 'sexta';if(wd===0||wd===6)return 'sab_dom';return 'seg_qui'}
 function entradaAtiva(item){const perfil=diaPerfilHoje(); if(item.regra==='seg_qui')return perfil==='seg_qui'; if(item.regra==='sex_dom')return perfil==='sexta'||perfil==='sab_dom'; return true}
@@ -249,21 +256,19 @@ function entradaObs(item){
   return item.obs||'';
 }
 function criarEntrada(){return {cozinha:ENTRADA_MODELO.cozinha.map(([id,nome,obs,regra])=>({id,nome,obs,regra,feito:false})),atendimento:ENTRADA_MODELO.atendimento.map(([id,nome,obs,regra])=>({id,nome,obs,regra,feito:false}))}}
-function carregarEntrada(usarEnviado=false){entrada=criarEntrada(); carregarLocal(usarEnviado); renderEntrada(); setStatus(`Checklist de entrada feito na ${diaSemanaBR(hojeISO())}`)}
-function renderEntrada(){
-  lista.innerHTML=['cozinha','atendimento'].map(sec=>renderEntradaSecao(sec)).join('');
-  atualizarResumoEntrada();
-}
-function renderEntradaSecao(sec){const titulo=sec==='cozinha'?'Cozinha':'Atendimento'; const ativos=entrada[sec].filter(entradaAtiva); return `<div class="entradaBox"><div class="entradaTitle">${titulo}</div>${ativos.map(i=>`<label class="checkRow"><input type="checkbox" ${i.feito?'checked':''} onchange="marcarEntrada('${sec}','${i.id}',this.checked)"><div><div class="checkText">${esc(i.nome)}</div>${entradaObs(i)?`<div class="checkObs">${esc(entradaObs(i))}</div>`:''}</div></label>`).join('')}<button id="send_${sec}" class="sectionSend" onclick="enviarEntrada('${sec}')" disabled>Enviar checklist ${titulo}</button><div class="summary" id="sum_${sec}"></div></div>`}
+function secEntradaAtual(){return moduloAtual==='entrada-atendimento'?'atendimento':'cozinha'}
+function carregarEntrada(usarEnviado=false){entrada=criarEntrada(); carregarLocal(usarEnviado); renderEntrada(); setStatus(`${usarEnviado?'Checklist enviado. Dados carregados para reenvio.':'Checklist de entrada carregado.'}`)}
+function renderEntrada(){const sec=secEntradaAtual(); lista.innerHTML=renderEntradaSecao(sec); atualizarResumoEntrada()}
+function renderEntradaSecao(sec){const titulo=sec==='cozinha'?'Cozinha':'Atendimento'; const ativos=entrada[sec].filter(entradaAtiva); return `<div class="entradaBox"><div class="entradaTitle">${sec==='cozinha'?'🍳':'🛎️'} ${titulo}</div>${ativos.map(i=>`<label class="checkRow"><input type="checkbox" ${i.feito?'checked':''} onchange="marcarEntrada('${sec}','${i.id}',this.checked)"><div><div class="checkText">${esc(i.nome)}</div>${entradaObs(i)?`<div class="checkObs">${esc(entradaObs(i))}</div>`:''}</div></label>`).join('')}</div>`}
 function marcarEntrada(sec,id,feito){const item=entrada[sec].find(i=>i.id===id); if(!item)return; item.feito=feito; salvarLocal(); atualizarResumoEntrada()}
 function entradaIncompleta(sec){return entrada[sec].filter(i=>entradaAtiva(i)&&!i.feito)}
-function atualizarResumoEntrada(){['cozinha','atendimento'].forEach(sec=>{const ativos=entrada[sec].filter(entradaAtiva); const feitos=ativos.filter(i=>i.feito).length; const sum=document.getElementById('sum_'+sec); if(sum)sum.textContent=`${feitos}/${ativos.length} itens marcados`; const btn=document.getElementById('send_'+sec); if(btn)btn.disabled=feitos!==ativos.length}); summary.textContent='Checklist entrada: envie cozinha e atendimento separadamente'}
-async function enviarEntrada(sec){
+function atualizarResumoEntrada(){const sec=secEntradaAtual();const ativos=entrada[sec].filter(entradaAtiva); const feitos=ativos.filter(i=>i.feito).length; summary.textContent=`${feitos}/${ativos.length} itens marcados`; if(typeof btnEnviar!=='undefined'){btnEnviar.disabled=feitos!==ativos.length;btnEnviar.textContent=localStorage.getItem(submittedKey())?'Reenviar checklist':'Enviar checklist'}}
+async function enviarEntrada(sec=secEntradaAtual()){
   const funcionario=pedirFuncionarioObrigatorio(); const faltando=entradaIncompleta(sec); const titulo=sec==='cozinha'?'Cozinha':'Atendimento';
   if(faltando.length){alert(`Marque todos os itens de ${titulo}. Faltam ${faltando.length}.`); return}
   const data_checklist=hojeISO(), data_alvo=data_checklist, origem=`checklist_entrada_${sec}`;
   const rows=entrada[sec].filter(entradaAtiva).map(i=>({data_checklist,data_alvo,categoria:`ENTRADA ${titulo.toUpperCase()}`,produto:i.nome,minimo_dia:1,quantidade_atual:1,precisa_trazer:0,observacao:[`Funcionário: ${funcionario}`,entradaObs(i)||''].filter(Boolean).join(' | '),origem,resolvido:true}));
-  try{setStatus(`Enviando checklist entrada ${titulo}...`); await supa(`checklist_levar?data_checklist=eq.${data_checklist}&origem=eq.${origem}`,{method:'DELETE',headers:{Prefer:'return=minimal'}}); await supa('checklist_levar',{method:'POST',headers:{Prefer:'return=minimal'},body:JSON.stringify(rows)}); localStorage.setItem(submittedKey(), JSON.stringify(estadoAtual())); localStorage.removeItem(localKey()); setStatus(`Checklist entrada ${titulo} enviado com sucesso!\nFuncionário: ${funcionario}`)}catch(e){setStatus(`Erro ao enviar entrada ${titulo}:\n`+e.message)}
+  try{setStatus(`Enviando checklist entrada ${titulo}...`); await supa(`checklist_levar?data_checklist=eq.${data_checklist}&origem=eq.${origem}`,{method:'DELETE',headers:{Prefer:'return=minimal'}}); await supa('checklist_levar',{method:'POST',headers:{Prefer:'return=minimal'},body:JSON.stringify(rows)}); localStorage.setItem(submittedKey(), JSON.stringify(estadoAtual())); localStorage.removeItem(localKey()); registrarEnvio(moduloAtual,funcionario); btnEnviar.textContent='Reenviar checklist'; setStatus(`Checklist enviado.\nFuncionário: ${funcionario}`)}catch(e){setStatus(`Erro ao enviar entrada ${titulo}:\n`+e.message)}
 }
 function carregarItensSexta(usarEnviado=false){
   itens=SEXTA_ITENS_MODELO.map(i=>({...i,quantidade_atual:'',observacao:''}));
@@ -373,12 +378,13 @@ async function enviarChecklistBebidas(){
     setStatus('Enviando checklist de bebidas...');
     await supa(`checklist_levar?data_checklist=eq.${data_checklist}&origem=eq.checklist_bebidas`,{method:'DELETE',headers:{Prefer:'return=minimal'}});
     await supa('checklist_levar',{method:'POST',headers:{Prefer:'return=minimal'},body:JSON.stringify(rows)});
-    setStatus(`Checklist de bebidas enviado com sucesso!\nFuncionário: ${funcionario}`);
-    localStorage.setItem(submittedKey(), JSON.stringify(estadoAtual())); localStorage.removeItem(localKey()); funcionario.value='';
+    localStorage.setItem(submittedKey(), JSON.stringify(estadoAtual())); localStorage.removeItem(localKey()); registrarEnvio(moduloAtual,funcionario); btnEnviar.textContent='Reenviar checklist'; setStatus(`Checklist enviado.
+Funcionário: ${funcionario}`); funcionario.value='';
   }catch(e){setStatus('Erro ao enviar checklist de bebidas:\n'+e.message)}
 }
 async function enviarChecklist(){
-  if(moduloAtual==='fechamento') return enviarFechamento();
+  if(moduloAtual==='fechamento-cozinha') return enviarFechamento();
+  if(moduloAtual.startsWith('entrada')) return enviarEntrada();
   if(moduloAtual==='bebidas') return enviarChecklistBebidas();
   const funcionario=pedirFuncionarioObrigatorio();
   const faltando=itensIncompletos(); if(faltando.length){alert(`Preencha todos os itens ou marque Não precisa. Faltam ${faltando.length}.`); setStatus(`Checklist incompleto. Faltam ${faltando.length} itens.`); return}
@@ -392,11 +398,13 @@ async function enviarChecklist(){
     await supa(`checklist_levar?data_checklist=eq.${data_checklist}&origem=eq.${origemChecklist}`,{method:'DELETE',headers:{Prefer:'return=minimal'}});
     await supa('checklist_levar',{method:'POST',headers:{Prefer:'return=minimal'},body:JSON.stringify(rows)});
     const total=rows.filter(r=>r.precisa_trazer>0).length;
-    setStatus(`Checklist enviado com sucesso!\nFuncionário: ${funcionario}\nData alvo: ${fmtBR(data_alvo)}\nItens para levar: ${total}`);
-    localStorage.setItem(submittedKey(), JSON.stringify(estadoAtual())); localStorage.removeItem(localKey()); funcionario.value=''; if(itemExtra){itemExtra.value=''; atualizarExtraCount();}
+    localStorage.setItem(submittedKey(), JSON.stringify(estadoAtual())); localStorage.removeItem(localKey()); registrarEnvio(moduloAtual,funcionario); btnEnviar.textContent='Reenviar checklist'; setStatus(`Checklist enviado.
+Funcionário: ${funcionario}
+Data alvo: ${fmtBR(data_alvo)}
+Itens para levar: ${total}`); funcionario.value=''; if(itemExtra){itemExtra.value=''; atualizarExtraCount();}
   }catch(e){setStatus('Erro ao enviar checklist:\n'+e.message)}
 }
-funcionario.oninput=salvarLocal; atualizarExtraCount();
+funcionario.oninput=salvarLocal; atualizarExtraCount(); atualizarMenuEnvios();
 </script>
 </body>
 </html>
